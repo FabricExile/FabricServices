@@ -74,6 +74,22 @@ KLTypeOp::KLTypeOp(const KLFile* klFile, JSONData data)
     {
       m_op = OpType_Div;
     }
+    else if(binOpType == "rem")
+    {
+      m_op = OpType_Rem;
+    }
+    else if(binOpType == "bit_or")
+    {
+      m_op = OpType_BitOr;
+    }
+    else if(binOpType == "bit_and")
+    {
+      m_op = OpType_BitAnd;
+    }
+    else if(binOpType == "bit_xor")
+    {
+      m_op = OpType_BitXor;
+    }
     else
     {
       std::string message = "BinOpImpl contains unsupport binOpType '"+binOpType+"'.";
@@ -184,9 +200,29 @@ const std::string & KLTypeOp::getName() const
         m_name = "/";
         break;
       }
+      case(OpType_Rem):
+      {
+        m_name = "%";
+        break;
+      }
       case(OpType_Neg):
       {
         m_name = "-";
+        break;
+      }
+      case(OpType_BitOr):
+      {
+        m_name = "&";
+        break;
+      }
+      case(OpType_BitAnd):
+      {
+        m_name = "|";
+        break;
+      }
+      case(OpType_BitXor):
+      {
+        m_name = "^";
         break;
       }
       case(OpType_NumElements): break;
@@ -216,6 +252,10 @@ const std::string & KLTypeOp::getReturnType() const
       case(OpType_Sub):
       case(OpType_Mul):
       case(OpType_Div):
+      case(OpType_Rem):
+      case(OpType_BitOr):
+      case(OpType_BitAnd):
+      case(OpType_BitXor):
       {
         m_returnType = getLhs();
         break;
@@ -303,6 +343,10 @@ std::string KLTypeOp::getKLCode(bool includeReturnType, bool includeKeyWord, boo
     case(OpType_Sub):
     case(OpType_Mul):
     case(OpType_Div):
+    case(OpType_Rem):
+    case(OpType_BitOr):
+    case(OpType_BitAnd):
+    case(OpType_BitXor):
     {
       code += "( "+getLhs()+" a, "+getRhs()+" b )";
       break;

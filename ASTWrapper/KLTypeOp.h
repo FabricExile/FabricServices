@@ -32,8 +32,11 @@ namespace FabricServices
         OpType_Sub,
         OpType_Mul,
         OpType_Div,
+        OpType_Rem,
         OpType_Neg,
-
+        OpType_BitOr,
+        OpType_BitAnd,
+        OpType_BitXor,
         OpType_NumElements
       };
 
