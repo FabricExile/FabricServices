@@ -24,6 +24,7 @@ env.MergeFlags(llvmFlags)
 
 if env['FABRIC_BUILD_OS'] == 'Darwin':
   env.Append(CCFLAGS = ['-Wall', '-Werror'])
+  env.Append(CCFLAGS = ['-fvisibility=hidden', '-fvisibility-inlines-hidden'])
   env.Append(CXXFLAGS = ['-std=c++03'])
   env.Append(CXXFLAGS = ['-stdlib=libstdc++'])
   env.Append(LINKFLAGS = ['-stdlib=libstdc++'])

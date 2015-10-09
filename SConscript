@@ -9,6 +9,7 @@ env = parentEnv.CloneSubStage('Services')
 if env['FABRIC_BUILD_OS'] == 'Darwin':
   env.Append(CXXFLAGS = ['-std=c++03'])
   env.Append(CXXFLAGS = ['-stdlib=libstdc++'])
+  env.Append(CXXFLAGS = ['-fvisibility=hidden'])
   env.Append(LINKFLAGS = ['-stdlib=libstdc++'])
 
 SConscript(
