@@ -205,12 +205,11 @@ std::string KLFunction::getKLCode(bool includeReturnType, bool includeKeyWord, b
   return code;
 }
 
-std::string KLFunction::getNotation() const
+std::string KLFunction::getNotation( std::string const &type ) const
 {
   if(m_returnType.length() == 0 && !isMethod())
     return getKLCode();
 
-  std::string type = "$TYPE$";
   std::string key = m_returnType;
   if(isMethod())
   {
