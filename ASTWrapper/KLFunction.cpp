@@ -6,7 +6,6 @@
 
 #include <vector>
 #include <string>
-#include <sstream>
 
 using namespace FabricServices::ASTWrapper;
 
@@ -206,92 +205,77 @@ std::string KLFunction::getKLCode(bool includeReturnType, bool includeKeyWord, b
   return code;
 }
 
-std::string KLFunction::getNotation( std::string const &thisType ) const
+std::string KLFunction::getNotation( std::string const &type ) const
 {
-  // [pzion 20151022] I have no idea what this accomplishes...
   if(m_returnType.length() == 0 && !isMethod())
     return getKLCode();
 
-  FabricServices::ASTWrapper::KLMethod const *meth;
-  if ( isMethod() )
-    meth = static_cast<FabricServices::ASTWrapper::KLMethod const *>( this );
+  std::string key = m_returnType;
+  if(isMethod())
+  {
+    const KLMethod * method = (const KLMethod *)this;
+    key = method->getThisType();
+  }
+
+  std::string notation;
+
+  if(m_returnType.length() > 0)
+  {
+    if(key == m_returnType)
+      notation += type;
+    else
+      notation += m_returnType;
+    notation += " ";
+  }
+
+  if(isMethod())
+  {
+    const KLMethod * method = (const KLMethod *)this;
+    if(!method->isConstructor())
+    {
+      notation += type;
+      notation += ".";
+    }
+  }
+
+  if(getName() == key)
+    notation += type;
   else
-    meth = 0;
+    notation += getName();
 
-  uint32_t typeGroupCount = 0;
-  std::map<std::string, uint32_t> typeNameToTypeGroupIndex;
+  notation += getSuffix();
 
-  if ( !m_returnType.empty() )
+  notation += "(";
+
+  if(m_params.size() > 0)
   {
-    std::map<std::string, uint32_t>::iterator it =
-      typeNameToTypeGroupIndex.find( m_returnType );
-    if ( it == typeNameToTypeGroupIndex.end() )
-      typeNameToTypeGroupIndex.insert(
-        std::pair<std::string, uint32_t>( m_returnType, typeGroupCount++ )
-        );
+    notation += " ";
+
+    for(uint32_t i=0;i<m_params.size();i++)
+    {
+      const KLParameter * p = m_params[i];
+      if(i > 0)
+        notation += ", ";
+
+      notation += p->getUsage();
+      notation += " ";
+      if(p->getType() == key)
+        notation += type;
+      else
+        notation += p->getTypeNoArray();
+      notation += " ";
+      notation += p->getName();
+      if(p->getType() != key)
+        notation += p->getTypeArraySuffix();
+    }
+
+
+    notation += " ";
   }
 
-  if ( meth && !meth->isConstructor() )
-  {
-    std::map<std::string, uint32_t>::iterator it =
-      typeNameToTypeGroupIndex.find( thisType );
-    if ( it == typeNameToTypeGroupIndex.end() )
-      typeNameToTypeGroupIndex.insert(
-        std::pair<std::string, uint32_t>( thisType, typeGroupCount++ )
-        );
-  }
+  notation += ")";
 
-  for ( uint32_t i = 0; i < m_params.size(); ++i )
-  {
-    const KLParameter * param = m_params[i];
-    std::string paramType = param->getTypeNoArray();
-    std::map<std::string, uint32_t>::iterator it =
-      typeNameToTypeGroupIndex.find( paramType );
-    if ( it == typeNameToTypeGroupIndex.end() )
-      typeNameToTypeGroupIndex.insert(
-        std::pair<std::string, uint32_t>( paramType, typeGroupCount++ )
-        );
-  }
-
-  std::ostringstream notation;
-
-  if ( !m_returnType.empty() )
-  {
-    notation << "$TYPE";
-    notation << typeNameToTypeGroupIndex[m_returnType];
-    notation << "$ ";
-  }
-
-  if ( meth && !meth->isConstructor() )
-  {
-    notation << thisType;
-    notation << ".";
-  }
-
-  notation << getName();
-
-  if ( meth && !meth->isConstructor() )
-    notation << getSuffix();
-
-  notation << "(";
-
-  for ( uint32_t i = 0; i < m_params.size(); ++i )
-  {
-    const KLParameter * param = m_params[i];
-
-    if ( i > 0 )
-      notation << ", ";
-    
-    notation << param->getUsage();
-    notation << " $TYPE";
-    notation << typeNameToTypeGroupIndex[param->getTypeNoArray()];
-    notation << "$";
-    notation << param->getTypeArraySuffix();
-  }
-
-  notation << ")";
-
-  return notation.str();
+  return notation;
 }
 
 std::string KLFunction::getLabel() const

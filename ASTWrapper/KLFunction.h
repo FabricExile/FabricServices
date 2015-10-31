@@ -48,7 +48,7 @@ namespace FabricServices
       virtual std::string getSuffix() const; // the suffix can be '!' or '?'
       virtual const char * getKLType() const;
       virtual std::string getKLCode(bool includeReturnType = true, bool includeKeyWord = true, bool includePrefix = true, bool includeName = true) const;
-      virtual std::string getNotation( std::string const &thisType ) const;
+      virtual std::string getNotation( std::string const &type ) const;
       virtual std::string getLabel() const;
 
     protected:
