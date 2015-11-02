@@ -216,17 +216,17 @@ std::string KLFunction::getNotation( std::string const &type ) const
   if ( m_returnType.length() == 0 && !meth )
     return getKLCode();
 
-  std::string key;
+  std::string typeToReplace;
   if ( meth )
-    key = meth->getThisType();
+    typeToReplace = meth->getThisType();
   else
-    key = m_returnType;
+    typeToReplace = m_returnType;
 
   std::string notation;
 
   if ( m_returnType.length() > 0 )
   {
-    if ( key == m_returnType )
+    if ( typeToReplace == m_returnType )
       notation += type;
     else
       notation += m_returnType;
@@ -242,7 +242,7 @@ std::string KLFunction::getNotation( std::string const &type ) const
     }
   }
 
-  if ( getName() == key )
+  if ( getName() == typeToReplace )
     notation += type;
   else
     notation += getName();
@@ -259,13 +259,13 @@ std::string KLFunction::getNotation( std::string const &type ) const
 
     notation += p->getUsage();
     notation += " ";
-    if ( p->getType() == key )
+    if ( p->getType() == typeToReplace )
       notation += type;
     else
       notation += p->getTypeNoArray();
     notation += " ";
     notation += p->getName();
-    if ( p->getType() != key )
+    if ( p->getType() != typeToReplace )
       notation += p->getTypeArraySuffix();
   }
 
