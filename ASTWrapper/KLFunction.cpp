@@ -262,11 +262,7 @@ std::string KLFunction::getNotation( std::string const &type ) const
     if ( p->getType() == typeToReplace )
       notation += type;
     else
-      notation += p->getTypeNoArray();
-    notation += " ";
-    notation += p->getName();
-    if ( p->getType() != typeToReplace )
-      notation += p->getTypeArraySuffix();
+      notation += p->getType();
   }
 
   notation += ")";
