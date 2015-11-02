@@ -205,7 +205,7 @@ std::string KLFunction::getKLCode(bool includeReturnType, bool includeKeyWord, b
   return code;
 }
 
-std::string KLFunction::getNotation( std::string const &type ) const
+std::string KLFunction::getNotation() const
 {
   KLMethod const *meth;
   if ( isMethod() )
@@ -227,7 +227,7 @@ std::string KLFunction::getNotation( std::string const &type ) const
   if ( m_returnType.length() > 0 )
   {
     if ( typeToReplace == m_returnType )
-      notation += type;
+      notation += "$TYPE$";
     else
       notation += m_returnType;
     notation += " ";
@@ -237,13 +237,13 @@ std::string KLFunction::getNotation( std::string const &type ) const
   {
     if ( !meth->isConstructor() )
     {
-      notation += type;
+      notation += "$TYPE$";
       notation += ".";
     }
   }
 
   if ( getName() == typeToReplace )
-    notation += type;
+    notation += "$TYPE$";
   else
     notation += getName();
 
@@ -260,7 +260,7 @@ std::string KLFunction::getNotation( std::string const &type ) const
     notation += p->getUsage();
     notation += " ";
     if ( p->getType() == typeToReplace )
-      notation += type;
+      notation += "$TYPE$";
     else
       notation += p->getType();
   }
