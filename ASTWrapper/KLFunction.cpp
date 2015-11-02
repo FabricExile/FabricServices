@@ -249,8 +249,6 @@ std::string KLFunction::getNotation( std::string const &type ) const
 
   if(m_params.size() > 0)
   {
-    notation += " ";
-
     for(uint32_t i=0;i<m_params.size();i++)
     {
       const KLParameter * p = m_params[i];
@@ -268,9 +266,6 @@ std::string KLFunction::getNotation( std::string const &type ) const
       if(p->getType() != key)
         notation += p->getTypeArraySuffix();
     }
-
-
-    notation += " ";
   }
 
   notation += ")";
