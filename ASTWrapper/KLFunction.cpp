@@ -205,7 +205,10 @@ std::string KLFunction::getKLCode(bool includeReturnType, bool includeKeyWord, b
   return code;
 }
 
-std::string KLFunction::getNotation() const
+std::string KLFunction::getNotation(
+  FTL::StrRef thisTypeOverride,
+  bool isPolyThis
+  ) const
 {
   KLMethod const *meth;
   if ( isMethod() )
@@ -216,38 +219,44 @@ std::string KLFunction::getNotation() const
   if ( m_returnType.length() == 0 && !meth )
     return getKLCode();
 
-  std::string typeToReplace;
-  if ( meth )
-    typeToReplace = meth->getThisType();
-  else
-    typeToReplace = m_returnType;
+  std::string thisTypeToReplace;
+  if ( isPolyThis )
+  {
+    if ( meth )
+      thisTypeToReplace = meth->getThisType();
+    else
+      thisTypeToReplace = m_returnType;
+  }
 
   std::string notation;
 
   if ( m_returnType.length() > 0 )
   {
-    if ( typeToReplace == m_returnType )
+    if ( thisTypeToReplace == m_returnType )
       notation += "$TYPE$";
     else
       notation += m_returnType;
     notation += " ";
   }
 
-  if ( meth )
+  if ( meth && !meth->isConstructor() )
   {
-    if ( !meth->isConstructor() )
-    {
+    if ( isPolyThis )
       notation += "$TYPE$";
-      notation += ".";
-    }
+    else
+      notation += thisTypeOverride;
+    notation += ".";
   }
 
-  if ( getName() == typeToReplace )
-    notation += "$TYPE$";
+  std::string dfgPresetTitle =
+    getComments()->getSingleQualifier("dfgPresetTitle");
+  if ( !dfgPresetTitle.empty() )
+    notation += dfgPresetTitle;
   else
     notation += getName();
 
-  notation += getSuffix();
+  if ( !meth || !meth->isConstructor() )
+    notation += getSuffix();
 
   notation += "(";
 
@@ -259,7 +268,7 @@ std::string KLFunction::getNotation() const
 
     notation += p->getUsage();
     notation += " ";
-    if ( p->getType() == typeToReplace )
+    if ( p->getType() == thisTypeToReplace )
       notation += "$TYPE$";
     else
       notation += p->getType();
