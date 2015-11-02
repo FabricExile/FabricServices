@@ -207,38 +207,42 @@ std::string KLFunction::getKLCode(bool includeReturnType, bool includeKeyWord, b
 
 std::string KLFunction::getNotation( std::string const &type ) const
 {
-  if(m_returnType.length() == 0 && !isMethod())
+  KLMethod const *meth;
+  if ( isMethod() )
+    meth = static_cast<KLMethod const *>( this );
+  else
+    meth = 0;
+
+  if ( m_returnType.length() == 0 && !meth )
     return getKLCode();
 
-  std::string key = m_returnType;
-  if(isMethod())
-  {
-    const KLMethod * method = (const KLMethod *)this;
-    key = method->getThisType();
-  }
+  std::string key;
+  if ( meth )
+    key = meth->getThisType();
+  else
+    key = m_returnType;
 
   std::string notation;
 
-  if(m_returnType.length() > 0)
+  if ( m_returnType.length() > 0 )
   {
-    if(key == m_returnType)
+    if ( key == m_returnType )
       notation += type;
     else
       notation += m_returnType;
     notation += " ";
   }
 
-  if(isMethod())
+  if ( meth )
   {
-    const KLMethod * method = (const KLMethod *)this;
-    if(!method->isConstructor())
+    if ( !meth->isConstructor() )
     {
       notation += type;
       notation += ".";
     }
   }
 
-  if(getName() == key)
+  if ( getName() == key )
     notation += type;
   else
     notation += getName();
@@ -247,25 +251,22 @@ std::string KLFunction::getNotation( std::string const &type ) const
 
   notation += "(";
 
-  if(m_params.size() > 0)
+  for ( uint32_t i = 0; i < m_params.size(); ++i )
   {
-    for(uint32_t i=0;i<m_params.size();i++)
-    {
-      const KLParameter * p = m_params[i];
-      if(i > 0)
-        notation += ", ";
+    const KLParameter * p = m_params[i];
+    if(i > 0)
+      notation += ", ";
 
-      notation += p->getUsage();
-      notation += " ";
-      if(p->getType() == key)
-        notation += type;
-      else
-        notation += p->getTypeNoArray();
-      notation += " ";
-      notation += p->getName();
-      if(p->getType() != key)
-        notation += p->getTypeArraySuffix();
-    }
+    notation += p->getUsage();
+    notation += " ";
+    if ( p->getType() == key )
+      notation += type;
+    else
+      notation += p->getTypeNoArray();
+    notation += " ";
+    notation += p->getName();
+    if ( p->getType() != key )
+      notation += p->getTypeArraySuffix();
   }
 
   notation += ")";
