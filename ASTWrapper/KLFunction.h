@@ -54,7 +54,8 @@ namespace FabricServices
 
       std::string getNotation(
         FTL::StrRef thisTypeOverride,
-        bool isPolyThis
+        bool isPolyThis,
+        bool isPolyParams
         ) const;
 
     protected:

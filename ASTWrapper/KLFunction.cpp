@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 
 using namespace FabricServices::ASTWrapper;
 
@@ -207,10 +208,11 @@ std::string KLFunction::getKLCode(bool includeReturnType, bool includeKeyWord, b
 
 std::string KLFunction::getNotation(
   FTL::StrRef thisTypeOverride,
-  bool isPolyThis
+  bool isPolyThis,
+  bool isPolyParams
   ) const
 {
-  bool isPolyAnything = isPolyThis;
+  bool isPolyAnything = isPolyThis || isPolyParams;
 
   KLMethod const *meth;
   if ( isMethod() )
@@ -230,61 +232,67 @@ std::string KLFunction::getNotation(
       thisTypeToReplace = m_returnType;
   }
 
-  std::string notation;
+  std::ostringstream ss;
 
   if ( isPolyAnything )
   {
     if ( m_returnType.length() > 0 )
     {
       if ( thisTypeToReplace == m_returnType )
-        notation += "$TYPE$";
+        ss << "$TYPE_THIS$";
       else
-        notation += m_returnType;
-      notation += " ";
+        ss << m_returnType;
+      ss << " ";
     }
   }
 
   if ( meth && !meth->isConstructor() )
   {
     if ( isPolyThis )
-      notation += "$TYPE$";
+      ss << "$TYPE_THIS$";
     else
-      notation += thisTypeOverride;
-    notation += ".";
+      ss << thisTypeOverride;
+    ss << ".";
   }
 
   std::string dfgPresetTitle =
     getComments()->getSingleQualifier("dfgPresetTitle");
   if ( !dfgPresetTitle.empty() )
-    notation += dfgPresetTitle;
+    ss << dfgPresetTitle;
   else
-    notation += getName();
+    ss << getName();
 
   if ( isPolyAnything )
   {
     if ( !meth || !meth->isConstructor() )
-      notation += getSuffix();
+      ss << getSuffix();
 
-    notation += "(";
+    ss << '(';
 
     for ( uint32_t i = 0; i < m_params.size(); ++i )
     {
       const KLParameter * p = m_params[i];
       if(i > 0)
-        notation += ", ";
+        ss << ", ";
 
-      notation += p->getUsage();
-      notation += " ";
+      ss << p->getUsage();
+      ss << ' ';
       if ( p->getType() == thisTypeToReplace )
-        notation += "$TYPE$";
+        ss << "$TYPE_THIS$";
+      else if ( isPolyParams )
+      {
+        ss << "$TYPE_PARAM_";
+        ss << i;
+        ss << '$';
+      }
       else
-        notation += p->getType();
+        ss << p->getType();
     }
 
-    notation += ")";
+    ss << ')';
   }
 
-  return notation;
+  return ss.str();
 }
 
 std::string KLFunction::getLabel() const
