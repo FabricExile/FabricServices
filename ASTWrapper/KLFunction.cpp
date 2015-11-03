@@ -210,6 +210,8 @@ std::string KLFunction::getNotation(
   bool isPolyThis
   ) const
 {
+  bool isPolyAnything = isPolyThis;
+
   KLMethod const *meth;
   if ( isMethod() )
     meth = static_cast<KLMethod const *>( this );
@@ -230,13 +232,16 @@ std::string KLFunction::getNotation(
 
   std::string notation;
 
-  if ( m_returnType.length() > 0 )
+  if ( isPolyAnything )
   {
-    if ( thisTypeToReplace == m_returnType )
-      notation += "$TYPE$";
-    else
-      notation += m_returnType;
-    notation += " ";
+    if ( m_returnType.length() > 0 )
+    {
+      if ( thisTypeToReplace == m_returnType )
+        notation += "$TYPE$";
+      else
+        notation += m_returnType;
+      notation += " ";
+    }
   }
 
   if ( meth && !meth->isConstructor() )
@@ -255,26 +260,29 @@ std::string KLFunction::getNotation(
   else
     notation += getName();
 
-  if ( !meth || !meth->isConstructor() )
-    notation += getSuffix();
-
-  notation += "(";
-
-  for ( uint32_t i = 0; i < m_params.size(); ++i )
+  if ( isPolyAnything )
   {
-    const KLParameter * p = m_params[i];
-    if(i > 0)
-      notation += ", ";
+    if ( !meth || !meth->isConstructor() )
+      notation += getSuffix();
 
-    notation += p->getUsage();
-    notation += " ";
-    if ( p->getType() == thisTypeToReplace )
-      notation += "$TYPE$";
-    else
-      notation += p->getType();
+    notation += "(";
+
+    for ( uint32_t i = 0; i < m_params.size(); ++i )
+    {
+      const KLParameter * p = m_params[i];
+      if(i > 0)
+        notation += ", ";
+
+      notation += p->getUsage();
+      notation += " ";
+      if ( p->getType() == thisTypeToReplace )
+        notation += "$TYPE$";
+      else
+        notation += p->getType();
+    }
+
+    notation += ")";
   }
-
-  notation += ")";
 
   return notation;
 }
