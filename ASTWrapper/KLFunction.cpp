@@ -282,7 +282,7 @@ std::string KLFunction::getNotation(
       else if ( isPolyParams )
       {
         ss << "$TYPE_PARAM_";
-        ss << i;
+        ss << i + 1;
         ss << '$';
       }
       else
