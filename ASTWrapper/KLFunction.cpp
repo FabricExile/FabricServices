@@ -239,7 +239,7 @@ std::string KLFunction::getNotation(
     if ( m_returnType.length() > 0 )
     {
       if ( thisTypeToReplace == m_returnType )
-        ss << "$TYPE_THIS$";
+        ss << "$TYPE$";
       else
         ss << m_returnType;
       ss << " ";
@@ -249,7 +249,7 @@ std::string KLFunction::getNotation(
   if ( meth && !meth->isConstructor() )
   {
     if ( isPolyThis )
-      ss << "$TYPE_THIS$";
+      ss << "$TYPE$";
     else
       ss << thisTypeOverride;
     ss << ".";
@@ -278,7 +278,7 @@ std::string KLFunction::getNotation(
       ss << p->getUsage();
       ss << ' ';
       if ( p->getType() == thisTypeToReplace )
-        ss << "$TYPE_THIS$";
+        ss << "$TYPE$";
       else if ( isPolyParams )
       {
         ss << "$TYPE_PARAM_";
