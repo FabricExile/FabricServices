@@ -209,11 +209,10 @@ std::string KLFunction::getKLCode(bool includeReturnType, bool includeKeyWord, b
 std::string KLFunction::getNotation(
   FTL::StrRef thisTypeOverride,
   bool isPolyThis,
-  bool isPolyParams
+  bool isPolyParams,
+  bool includeParams
   ) const
 {
-  bool isPolyAnything = isPolyThis || isPolyParams;
-
   KLMethod const *meth;
   if ( isMethod() )
     meth = static_cast<KLMethod const *>( this );
@@ -234,7 +233,7 @@ std::string KLFunction::getNotation(
 
   std::ostringstream ss;
 
-  if ( isPolyAnything )
+  if ( isPolyThis )
   {
     if ( m_returnType.length() > 0 )
     {
@@ -262,7 +261,7 @@ std::string KLFunction::getNotation(
   else
     ss << getName();
 
-  if ( isPolyAnything )
+  if ( includeParams )
   {
     if ( !meth || !meth->isConstructor() )
       ss << getSuffix();
