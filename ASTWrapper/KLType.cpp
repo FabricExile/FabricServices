@@ -68,7 +68,12 @@ const KLMethod * KLType::getMethod(const char * labelOrName) const
   return NULL;
 }
 
-std::vector<const KLMethod*> KLType::getMethods(bool includeInherited, bool includeInternal, const char * category, bool sorted) const
+std::vector<const KLMethod*> KLType::getMethods(
+  bool includeInherited,
+  bool includeInternal,
+  const char * category,
+  bool sorted
+  ) const
 {
   std::map<std::string, const KLMethod*> lookup;
   std::vector<const KLMethod*> flatList;
@@ -96,7 +101,7 @@ std::vector<const KLMethod*> KLType::getMethods(bool includeInherited, bool incl
       std::vector<const KLMethod*> methods = parents[i]->getMethods(includeInherited, includeInternal, category, sorted);
       for(uint32_t j=0;j<methods.size();j++)
       {
-        if(!methods[j]->isVirtual())
+        if(methods[j]->isConstructor())
           continue;
         std::string key = methods[j]->getLabel();
         if(lookup.find(key) != lookup.end())
