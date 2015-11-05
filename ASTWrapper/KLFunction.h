@@ -52,13 +52,6 @@ namespace FabricServices
       virtual std::string getKLCode(bool includeReturnType = true, bool includeKeyWord = true, bool includePrefix = true, bool includeName = true) const;
       virtual std::string getLabel() const;
 
-      std::string getNotation(
-        FTL::StrRef thisTypeOverride,
-        bool isPolyThis,
-        bool isPolyParams,
-        bool includeParams
-        ) const;
-
     protected:
 
       KLFunction(const KLFile* klFile, JSONData data);
