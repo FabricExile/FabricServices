@@ -233,16 +233,13 @@ std::string KLFunction::getNotation(
 
   std::ostringstream ss;
 
-  if ( isPolyThis )
+  if ( !m_returnType.empty() )
   {
-    if ( m_returnType.length() > 0 )
-    {
-      if ( thisTypeToReplace == m_returnType )
-        ss << "$TYPE$";
-      else
-        ss << m_returnType;
-      ss << " ";
-    }
+    if ( thisTypeToReplace == m_returnType )
+      ss << "$TYPE$";
+    else
+      ss << m_returnType;
+    ss << " ";
   }
 
   if ( meth && !meth->isConstructor() )
