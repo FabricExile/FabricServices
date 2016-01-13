@@ -135,7 +135,7 @@ if installHeaders:
 #     libDir.File('.'.join(['lib' + libName, 'dylib'])),
 #     ]])
 
-servicesIncludeDir = env.Dir('#').Dir('Native').Dir('Services')
+servicesIncludeDir = env.Dir('#').Dir('Native').Dir('FabricServices')
 
 servicesFlags = {
   'CPPPATH': [servicesIncludeDir],
