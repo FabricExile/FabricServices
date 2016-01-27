@@ -1,4 +1,4 @@
-// Copyright 2010-2015 Fabric Software Inc. All rights reserved.
+// Copyright (c) 2010-2016, Fabric Software Inc. All rights reserved.
 
 #ifndef __CodeCompletion_KLSyntaxHighlighter__
 #define __CodeCompletion_KLSyntaxHighlighter__
