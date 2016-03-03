@@ -1,4 +1,4 @@
-// Copyright 2010-2015 Fabric Software Inc. All rights reserved.
+// Copyright (c) 2010-2016, Fabric Software Inc. All rights reserved.
 
 #include "KLFunction.h"
 #include "KLMethod.h"
@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 
 using namespace FabricServices::ASTWrapper;
 
@@ -203,80 +204,6 @@ std::string KLFunction::getKLCode(bool includeReturnType, bool includeKeyWord, b
   code += ")";
 
   return code;
-}
-
-std::string KLFunction::getNotation() const
-{
-  if(m_returnType.length() == 0 && !isMethod())
-    return getKLCode();
-
-  std::string type = "$TYPE$";
-  std::string key = m_returnType;
-  if(isMethod())
-  {
-    const KLMethod * method = (const KLMethod *)this;
-    key = method->getThisType();
-  }
-
-  std::string notation;
-
-  if(m_returnType.length() > 0)
-  {
-    if(key == m_returnType)
-      notation += type;
-    else
-      notation += m_returnType;
-    notation += " ";
-  }
-
-  if(isMethod())
-  {
-    const KLMethod * method = (const KLMethod *)this;
-    if(!method->isConstructor())
-    {
-      notation += type;
-      notation += ".";
-    }
-  }
-
-  if(getName() == key)
-    notation += type;
-  else
-    notation += getName();
-
-  notation += getSuffix();
-
-  notation += "(";
-
-  if(m_params.size() > 0)
-  {
-    notation += " ";
-
-    for(uint32_t i=0;i<m_params.size();i++)
-    {
-      const KLParameter * p = m_params[i];
-      if(i > 0)
-        notation += ", ";
-
-      notation += p->getUsage();
-      notation += " ";
-      if(p->getType() == key)
-        notation += type;
-      else
-        notation += p->getTypeNoArray();
-      notation += " ";
-      notation += p->getName();
-      if(p->getType() != key)
-        notation += p->getTypeArraySuffix();
-    }
-
-
-    notation += " ";
-  }
-
-  notation += ")";
-
-  return notation;
 }
 
 std::string KLFunction::getLabel() const

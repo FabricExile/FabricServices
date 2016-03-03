@@ -1,4 +1,4 @@
-// Copyright 2010-2015 Fabric Software Inc. All rights reserved.
+// Copyright (c) 2010-2016, Fabric Software Inc. All rights reserved.
 
 #ifndef __ASTWrapper_KLFunction__
 #define __ASTWrapper_KLFunction__
@@ -12,6 +12,8 @@
 #include "KLVarDeclStmt.h"
 #include "KLExprStmt.h"
 #include "KLParameter.h"
+
+#include <FTL/StrRef.h>
 
 #include <string>
 
@@ -48,7 +50,6 @@ namespace FabricServices
       virtual std::string getSuffix() const; // the suffix can be '!' or '?'
       virtual const char * getKLType() const;
       virtual std::string getKLCode(bool includeReturnType = true, bool includeKeyWord = true, bool includePrefix = true, bool includeName = true) const;
-      virtual std::string getNotation() const;
       virtual std::string getLabel() const;
 
     protected:
