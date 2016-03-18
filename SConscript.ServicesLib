@@ -144,7 +144,8 @@ servicesFlags = {
   }
 
 locals()['servicesFlags' + suffix] = servicesFlags
+locals()['servicesFlags_' + opt_version] = servicesFlags
 
-Export('servicesFlags', 'servicesFlags' + suffix, 'servicesIncludeDir', 'servicesFiles')
+Export('servicesFlags', 'servicesFlags' + suffix, 'servicesFlags_' + opt_version, 'servicesIncludeDir', 'servicesFiles')
 
 Return('servicesFiles')
