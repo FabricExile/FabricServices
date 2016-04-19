@@ -13,6 +13,7 @@ KLSyntaxHighlighter::KLSyntaxHighlighter(ASTWrapper::KLASTManager * manager)
 
   m_knownTokens.insert(std::pair<std::string, Token>("dfgEntry", Token_Keyword));
   m_knownTokens.insert(std::pair<std::string, Token>("dfgExecute", Token_Keyword));
+  m_knownTokens.insert(std::pair<std::string, Token>("dfgNodePath", Token_Keyword));
   m_knownTokens.insert(std::pair<std::string, Token>("report", Token_Function));
 }
 
