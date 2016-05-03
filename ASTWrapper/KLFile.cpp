@@ -35,7 +35,12 @@ void KLFile::parse()
 
   try
   {
-    FabricCore::RTVal jsonVal = GetKLJSONAST(*client, m_fileName.c_str(), m_klCode.c_str(), false);
+    FabricCore::RTVal jsonVal;
+    FabricCore::DFGExec *dfgExec = m_extension->getDFGExec();
+    if ( dfgExec )
+      jsonVal = dfgExec->getJSONAST(m_klCode.c_str(), false);
+    else
+      jsonVal = GetKLJSONAST(*client, m_fileName.c_str(), m_klCode.c_str(), false);
     std::string jsonStr = jsonVal.getStringCString();
 
     FabricCore::Variant variant = FabricCore::Variant::CreateFromJSON(jsonStr.c_str());

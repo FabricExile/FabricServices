@@ -30,6 +30,8 @@ if env['FABRIC_BUILD_OS'] == 'Darwin':
   env.Append(LINKFLAGS = ['-stdlib=libstdc++'])
 elif env['FABRIC_BUILD_OS'] == 'Linux':
   env.Append(CCFLAGS = ['-fPIC', '-Wall', '-Werror'])
+  if env['FABRIC_BUILD_TYPE'] == 'Debug':
+    env.Append(CCFLAGS = ['-g', '-O0'])
 elif env['FABRIC_BUILD_OS'] == 'Windows':
   env.Append(CCFLAGS = ['/EHsc', '/W2', '/wd4624', '/WX'])
   env.Append(LINKFLAGS = ['/WX'])

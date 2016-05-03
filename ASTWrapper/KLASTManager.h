@@ -32,13 +32,13 @@ namespace FabricServices
 
       bool getAutoLoadExtensions() const;
       void setAutoLoadExtensions(bool state);
-      const KLExtension* loadExtension(const char * name, const char * jsonContent, uint32_t numKlFiles, const char ** klContent);
-      const KLExtension* loadExtension(const char * jsonFilePath);
+      const KLExtension* loadExtension(const char * name, const char * jsonContent, uint32_t numKlFiles, const char ** klContent, FabricCore::DFGExec *dfgExec);
+      const KLExtension* loadExtension(const char * jsonFilePath, FabricCore::DFGExec *dfgExec);
       void loadAllExtensionsInFolder(const char * extensionFolder, bool parseExtensions = true);
       bool loadAllExtensionsFromExtsPath(bool parseExtensions = true);
       const KLExtension* loadExtensionFromExtsPath(const char * name);
       bool removeExtension(const char * name, const char * versionRequirement = "*");
-      const KLFile* loadSingleKLFile(const char * klFileName, const char * klContent);
+      const KLFile* loadSingleKLFile(const char * klFileName, const char * klContent, FabricCore::DFGExec *dfgExec);
 
       std::vector<const KLExtension*> getExtensions() const;
 
@@ -85,6 +85,7 @@ namespace FabricServices
     private:
       FabricCore::Client m_client;
       std::vector<const KLExtension*> m_extensions;
+      std::vector<KLFile*> m_files;
       std::vector<KLASTClient*> m_astClients;
       uint32_t m_maxDeclId;
       bool m_isUpdatingASTClients;

@@ -337,9 +337,10 @@ std::string KLComment::removeRstRoles(const char * text)
 {
   // [pzion 201450224] Replace eg. ":role:`some text`" by "some text"
 
-  std::string result = text;
+  FTL::CStrRef textStr( text );
+  std::string result;
 
-  FTL::MatchPrefixSeq<
+  static FTL::MatchPrefixSeq<
     FTL::MatchPrefixChar< FTL::MatchCharSingle<':'> >,
     FTL::MatchPrefixOneOrMore<
       FTL::MatchPrefixChar<
@@ -355,39 +356,32 @@ std::string KLComment::removeRstRoles(const char * text)
       >,
     FTL::MatchPrefixChar< FTL::MatchCharSingle<':'> >,
     FTL::MatchPrefixChar< FTL::MatchCharSingle<'`'> >
-    > prefixMatchSeq;
+    > const prefixMatchSeq;
 
-  FTL::StrRef resultStr = result;
-  FTL::StrRef::IT itBegin = resultStr.begin();
-  FTL::StrRef::IT itEnd = resultStr.end();
-  FTL::StrRef::IT it = itBegin;
-  for (;;)
+  bool inRole = false;
+  for ( FTL::StrRef::IT it = textStr.begin(); it != textStr.end(); )
   {
-    FTL::StrRef::IT itPrefixEnd = it;
-    if ( prefixMatchSeq( itPrefixEnd, itEnd ) )
+    if ( inRole )
     {
-      FTL::StrRef::IT itCloseBackTick =
-        resultStr.find( itPrefixEnd, itEnd, '`' );
-      if ( itCloseBackTick != itEnd )
+      if ( *it == '`' )
+        inRole = false;
+      else
+        result += *it;
+      ++it;
+    }
+    else
+    {
+      FTL::StrRef::IT itPrefixEnd = it;
+      if ( prefixMatchSeq( itPrefixEnd, textStr.end() ) )
       {
-        size_t headLength = it - itBegin;
-        size_t textStart = itCloseBackTick - itBegin;
-        size_t textLength = itCloseBackTick - itPrefixEnd;
-        memmove( &result[headLength], &result[textStart], textLength );
-        size_t tailStart = itCloseBackTick + 1 - itBegin;
-        size_t tailLength = itEnd - itCloseBackTick - 1;
-        memmove( &result[headLength+textLength], &result[tailStart], tailLength );
-        result.resize( headLength + textLength + tailLength );
-
-        resultStr = result;
-        itBegin = resultStr.begin();
-        itEnd = resultStr.end();
-        it = itBegin + tailLength;
-
-        continue;
+        it = itPrefixEnd;
+        inRole = true;
+      }
+      else
+      {
+        result += *it++;
       }
     }
-    ++it;
   }
 
   return result;

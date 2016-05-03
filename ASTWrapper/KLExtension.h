@@ -41,6 +41,11 @@ namespace FabricServices
       const char * getFilePath() const;
       const Version & getVersion() const;
 
+      FabricCore::DFGExec *getDFGExec() const
+      {
+        return m_dfgExec;
+      }
+
       std::vector<const KLFile*> getFiles() const;
 
       // decl vector getters
@@ -59,8 +64,9 @@ namespace FabricServices
 
     protected:
       
-      KLExtension(const KLASTManager* astManager, const char * jsonFilePath);
-      KLExtension(const KLASTManager* astManager, const char * name, const char * jsonContent, uint32_t numKLFiles, const char ** klContent);
+      KLExtension(const KLASTManager* astManager, const char * jsonFilePath, FabricCore::DFGExec *dfgExec);
+      KLExtension(const KLASTManager* astManager, const char * name, const char * jsonContent, uint32_t numKLFiles, const char ** klContent, FabricCore::DFGExec *dfgExec);
+
       void parse();
       void storeForwardDeclComments(const KLType * klType);
       void consumeForwardDeclComments(const KLType * klType);
@@ -77,6 +83,7 @@ namespace FabricServices
       Version m_version;
       std::vector<const KLFile*> m_files;
       std::map< std::string, std::vector< std::string > > m_forwardDeclComments;
+      FabricCore::DFGExec *m_dfgExec;
     };
 
   };
