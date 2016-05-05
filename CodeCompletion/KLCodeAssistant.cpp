@@ -92,11 +92,12 @@ bool KLCodeAssistant::updateCurrentKLFile(const KLFile * file)
   m_code = m_file->getKLCode();
 
   m_code = FTL::StrFilter<MatchCharBackSlashR>( m_code );
-  FTL::StrSplit<'\n'>(m_code, m_lines);
+  m_lines.clear();
+  FTL::StrSplit<'\n'>(m_code, m_lines, true);
   return true;
 }
 
-bool KLCodeAssistant::updateCurrentCodeAndFile(const std::string & code, const std::string & fileName, bool updateAST)
+bool KLCodeAssistant::updateCurrentCodeAndFile(const std::string & code, const std::string & fileName, bool updateAST, FabricCore::DFGExec *dfgExec )
 {
   if(!hasASTManager())
     return false;
@@ -112,27 +113,26 @@ bool KLCodeAssistant::updateCurrentCodeAndFile(const std::string & code, const s
   m_code = newCode;
   m_fileName = fileName;
   
-  FTL::StrSplit<'\n'>(m_code, m_lines);
+  m_lines.clear();
+  FTL::StrSplit<'\n'>(m_code, m_lines, true);
 
   if(updateAST)
   {
     if(m_file == NULL)
-      m_file = getASTManager()->loadSingleKLFile(m_fileName.c_str(), m_code.c_str());
+      m_file = getASTManager()->loadSingleKLFile(m_fileName.c_str(), m_code.c_str(), dfgExec);
     else if(m_file->getAbsoluteFilePath() != fileName)
-      m_file = getASTManager()->loadSingleKLFile(m_fileName.c_str(), m_code.c_str());
+      m_file = getASTManager()->loadSingleKLFile(m_fileName.c_str(), m_code.c_str(), dfgExec);
     else
       ((KLFile*)m_file)->updateKLCode(m_code.c_str());
 
     // update all error formats
-    /// todo: disable errors for now
-    /*
     m_highlighter->clearErrors();
     if(m_file->hasErrors())
     {
       std::vector<const KLError*> errors = m_file->getErrors();
       for(size_t i=0;i<errors.size();i++)
       {
-        if(errors[i]->getLine() <= m_lines.size())
+        if(errors[i]->getLine() <= static_cast<int>( m_lines.size() ))
         {
           uint32_t cursor;
           lineAndColumnToCursor(errors[i]->getLine(), 1, cursor);
@@ -140,7 +140,6 @@ bool KLCodeAssistant::updateCurrentCodeAndFile(const std::string & code, const s
         }
       }
     }
-    */
   }
 
   return updateAST;
@@ -254,13 +253,13 @@ std::string KLCodeAssistant::getWordAtCursor(uint32_t line, uint32_t column, boo
 
   uint32_t s = column - 1;
   uint32_t e = column - 1;
-
   while(s > 0)
   {
     if(!isWordChar(l[s-1]))
       break;
     s--;
   }
+
   while(e < l.length()-1)
   {
     if(!isWordChar(l[e+1]))

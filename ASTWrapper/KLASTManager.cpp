@@ -139,9 +139,9 @@ void KLASTManager::setAutoLoadExtensions(bool state)
   m_autoLoadExtensions = state;
 }
 
-const KLExtension* KLASTManager::loadExtension(const char * name, const char * jsonContent, uint32_t numKlFiles, const char ** klContent)
+const KLExtension* KLASTManager::loadExtension(const char * name, const char * jsonContent, uint32_t numKlFiles, const char ** klContent, FabricCore::DFGExec *dfgExec)
 {
-  KLExtension * extension = new KLExtension(this, name, jsonContent, numKlFiles, klContent);
+  KLExtension * extension = new KLExtension(this, name, jsonContent, numKlFiles, klContent, dfgExec);
   m_extensions.push_back(extension);
   onExtensionLoaded(extension);
   extension->parse();
@@ -149,9 +149,9 @@ const KLExtension* KLASTManager::loadExtension(const char * name, const char * j
   return extension;
 }
 
-const KLExtension* KLASTManager::loadExtension(const char * jsonFilePath)
+const KLExtension* KLASTManager::loadExtension(const char * jsonFilePath, FabricCore::DFGExec *dfgExec)
 {
-  KLExtension * extension = new KLExtension(this, jsonFilePath);
+  KLExtension * extension = new KLExtension(this, jsonFilePath, dfgExec);
   m_extensions.push_back(extension);
   onExtensionLoaded(extension);
   extension->parse();
@@ -194,7 +194,7 @@ void KLASTManager::loadAllExtensionsInFolder(const char * extensionFolder, bool 
           {
             try
             {
-              KLExtension * extension = new KLExtension(this, entryPath.c_str());
+              KLExtension * extension = new KLExtension(this, entryPath.c_str(), NULL);
               onExtensionLoaded(extension);
               m_extensions.push_back(extension);
             }
@@ -287,7 +287,7 @@ const KLExtension* KLASTManager::loadExtensionFromFolder(
           try
           {
             KLExtension *klExtension =
-              new KLExtension(this, entryPath.c_str());
+              new KLExtension(this, entryPath.c_str(), NULL);
             onExtensionLoaded(klExtension);
             m_extensions.push_back(klExtension);
             klExtension->parse();
@@ -354,7 +354,7 @@ bool KLASTManager::removeExtension(const char * name, const char * versionRequir
   return false;
 }
 
-const KLFile* KLASTManager::loadSingleKLFile(const char * klFileName, const char * klContent)
+const KLFile* KLASTManager::loadSingleKLFile(const char * klFileName, const char * klContent, FabricCore::DFGExec *dfgExec)
 {
   loadAllExtensionsFromExtsPath(false);
 
@@ -364,7 +364,7 @@ const KLFile* KLASTManager::loadSingleKLFile(const char * klFileName, const char
     std::string json = "{\n\"code\": \"";
     json += klFileName;
     json += "\"\n}\n";
-    extension = loadExtension(klFileName, json.c_str(), 1, &klContent);
+    extension = loadExtension(klFileName, json.c_str(), 1, &klContent, dfgExec);
     if(!extension)
       return NULL;
     return extension->getFiles()[0];

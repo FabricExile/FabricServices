@@ -36,7 +36,8 @@ bool KLExtension::Version::operator !=(const KLExtension::Version & other) const
   return major != other.major || minor != other.minor || revision != other.revision;
 }
 
-KLExtension::KLExtension(const KLASTManager* astManager, const char * jsonFilePath)
+KLExtension::KLExtension(const KLASTManager* astManager, const char * jsonFilePath, FabricCore::DFGExec *dfgExec)
+  : m_dfgExec( dfgExec )
 {
   m_astManager = (KLASTManager*)astManager;
 
@@ -120,7 +121,9 @@ KLExtension::KLExtension(const KLASTManager* astManager, const char * jsonFilePa
   init(jsonContent.c_str(), klContentCStr.size(), &klContentCStr[0]);
 }
 
-KLExtension::KLExtension(const KLASTManager* astManager, const char * name, const char * jsonContent, uint32_t numKLFiles, const char ** klContent)
+KLExtension::KLExtension(const KLASTManager* astManager, const char * name, const char * jsonContent, uint32_t numKLFiles, const char ** klContent, FabricCore::DFGExec *dfgExec)
+
+  : m_dfgExec( dfgExec )
 {
   m_astManager = (KLASTManager*)astManager;
   m_name = name;

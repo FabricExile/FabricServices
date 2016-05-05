@@ -30,7 +30,7 @@ namespace FabricServices
       std::vector<const ASTWrapper::KLError*> getKLErrors();
 
       bool updateCurrentKLFile(const ASTWrapper::KLFile * file);
-      bool updateCurrentCodeAndFile(const std::string & code, const std::string & fileName, bool updateAST = true);
+      bool updateCurrentCodeAndFile(const std::string & code, const std::string & fileName, bool updateAST = true, FabricCore::DFGExec *dfgExec = NULL);
 
       void lineAndColumnToCursor(uint32_t line, uint32_t column, uint32_t & cursor) const;
       void cursorToLineAndColumn(uint32_t cursor,  uint32_t & line, uint32_t & column) const;
