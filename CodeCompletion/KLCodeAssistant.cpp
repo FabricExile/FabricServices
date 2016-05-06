@@ -246,10 +246,10 @@ std::string KLCodeAssistant::getWordAtCursor(uint32_t line, uint32_t column, boo
     return "";
 
   const std::string & l = m_lines[line-1];
-  if(column == 0)
-    return "";
   if(column > l.length())
     column = l.length();
+  if(column == 0)
+    return "";
 
   uint32_t s = column - 1;
   uint32_t e = column - 1;
@@ -290,10 +290,10 @@ std::string KLCodeAssistant::getCharAtCursor(uint32_t line, uint32_t column) con
     return "";
 
   const std::string & l = m_lines[line-1];
-  if(column == 0)
-    return "";
   if(column > l.length())
     column = l.length();
+  if(column == 0)
+    return "";
 
   return l.substr(column-1, 1);
 }
@@ -359,10 +359,10 @@ const KLDecl * KLCodeAssistant::getDeclAtCursor(uint32_t line, uint32_t column) 
     return NULL;
 
   const std::string & l = m_lines[line-1];
-  if(column == 0)
-    return NULL;
   if(column > l.length())
     column = l.length();
+  if(column == 0)
+    return NULL;
 
   std::vector<std::string> delegates;
   uint32_t braces = 0;
