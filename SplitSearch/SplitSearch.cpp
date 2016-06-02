@@ -49,37 +49,120 @@ static inline unsigned CommonSuffixLength(
   return length;
 }
 
-static inline unsigned RevMatch(
+struct Score
+{
+  uint64_t points;
+  uint64_t penalty;
+
+  Score()
+    : points( 0 )
+    , penalty( 0 )
+    {}
+
+  Score( uint64_t _points, uint64_t _penalty )
+    : points( _points ), penalty( _penalty ) {}
+
+  bool isValid() const
+    { return points != UINT64_MAX && penalty != UINT64_MAX; }
+
+  static Score Invalid()
+    { return Score( UINT64_MAX, UINT64_MAX ); }
+
+  Score &operator+=( Score const &that )
+  {
+    points += that.points;
+    penalty += that.penalty;
+    return *this;
+  }
+
+  bool operator<( Score const &that ) const
+  {
+    return points < that.points
+      || ( points == that.points
+        && penalty > that.penalty );
+  }
+
+  bool operator>( Score const &that ) const
+  {
+    return points > that.points
+      || ( points == that.points
+        && penalty < that.penalty );
+  }
+};
+
+struct RevMatchResult
+{
+  uint64_t size;
+  Score score;
+
+  RevMatchResult()
+    : size( 0 )
+    {}
+
+  RevMatchResult &operator+=( RevMatchResult const &that )
+  {
+    size += that.size;
+    score += that.score;
+    return *this;
+  }
+};
+
+inline uint64_t Sq( uint64_t x ) { return x * x; }
+
+static inline RevMatchResult RevMatch(
   llvm::StringRef haystack,
   llvm::StringRef needle
   )
 {
-  unsigned best = 0;
-  while ( best < needle.size() && best < haystack.size() )
+  RevMatchResult bestResult;
+  bestResult.score.penalty = Sq( haystack.size() + 1 );
+  uint64_t tail = 0;
+  while ( !needle.empty()
+    && haystack.size() >= needle.size() )
   {
-    unsigned commonSuffixLength = CommonSuffixLength( haystack, needle );
-    if ( commonSuffixLength > best )
-      best = commonSuffixLength;
+    RevMatchResult thisResult;
+    thisResult.size = CommonSuffixLength( haystack, needle );
+    if ( thisResult.size > 0 )
+    {
+      uint64_t head = haystack.size() - thisResult.size;
+      thisResult.score.points = Sq(thisResult.size);
+      thisResult.score.penalty = Sq(head + 1) + tail;
+      if ( thisResult.size < haystack.size()
+        && thisResult.size < needle.size() )
+      {
+        llvm::StringRef subHaystack(
+          haystack.data(), haystack.size() - thisResult.size
+          );
+        llvm::StringRef subNeedle(
+          needle.data(), needle.size() - thisResult.size
+          );
+        thisResult += RevMatch( subHaystack, subNeedle );
+      }
+      if ( bestResult.score < thisResult.score )
+        bestResult = thisResult;
+    }
     haystack = haystack.drop_back();
+    ++tail;
   }
-  return best;
+  return bestResult;
 }
 
-static inline uint64_t Score(
+static inline Score ScoreMatch(
   llvm::ArrayRef<llvm::StringRef> prefixes,
   llvm::ArrayRef<llvm::StringRef> needle
   )
 {
   if ( needle.empty() )
-    return UINT64_MAX;
+    return Score::Invalid();
 
   llvm::StringRef lastNeedle = needle.back();
   llvm::StringRef lastPrefix = prefixes.back();
   needle = needle.drop_back();
-  unsigned revMatch = RevMatch( lastPrefix, lastNeedle );
+  RevMatchResult revMatch = RevMatch( lastPrefix, lastNeedle );
 
-  uint64_t subScore;
-  llvm::StringRef subLastNeedle = lastNeedle.drop_back( revMatch );
+  Score subScore;
+  llvm::StringRef subLastNeedle =
+    lastNeedle.drop_back( revMatch.size );
   if ( !needle.empty() || !subLastNeedle.empty() )
   {
     if ( prefixes.size() > 1 )
@@ -90,35 +173,38 @@ static inline uint64_t Score(
         subNeedle.push_back( subLastNeedle );
       
       llvm::ArrayRef<llvm::StringRef> subPrefixes = prefixes.drop_back();
-      subScore = Score( subPrefixes, subNeedle );
+      subScore = ScoreMatch( subPrefixes, subNeedle );
     }
-    else subScore = UINT64_MAX;
+    else subScore = Score::Invalid();
   }
-  else subScore = 0;
 
-  if ( subScore != UINT64_MAX )
-    return lastPrefix.size() - revMatch + 1 + 256 * subScore;
+  if ( subScore.isValid() )
+    return Score(
+      revMatch.score.points + subScore.points/2,
+      revMatch.score.penalty + subScore.penalty/2
+      );
   else
-    return UINT64_MAX;
+    return Score::Invalid();
 }
 
 class Match
 {
   void const *m_userdata;
-  uint64_t m_score;
+  Score m_score;
 
 public:
 
-  Match( void const *userdata, unsigned score ) :
+  Match( void const *userdata, Score score ) :
     m_userdata( userdata ), m_score( score ) {}
 
   void const *getUserdata() const { return m_userdata; }
 
   void dump( size_t index )
   {
-    printf( "index=%u score=%u userdata=%s\n",
+    printf( "index=%u score.points=%u score.penalty=%u userdata=%s\n",
       unsigned( index ),
-      unsigned( m_score ),
+      unsigned( m_score.points ),
+      unsigned( m_score.penalty ),
       (char const *)m_userdata
       );
   }
@@ -127,7 +213,7 @@ public:
   {
     bool operator()( Match const &lhs, Match const &rhs )
     {
-      return lhs.m_score < rhs.m_score;
+      return lhs.m_score > rhs.m_score;
     }
   };
 };
@@ -170,7 +256,7 @@ public:
 
   Matches() {}
 
-  void add( void const *userdata, unsigned score )
+  void add( void const *userdata, Score score )
   {
     m_impl.push_back( Match( userdata, score ) );
   }
@@ -231,8 +317,8 @@ protected:
 
       if ( it->second->m_userdata )
       {
-        uint64_t score = Score( prefixes, needle );
-        if ( score != UINT64_MAX )
+        Score score = ScoreMatch( prefixes, needle );
+        if ( score.isValid() )
           matches->add( it->second->m_userdata, score );
       }
 
@@ -477,6 +563,10 @@ FabricServices_SplitSearch_Matches FabricServices_SplitSearch_Dict_Search(
   )
 {
   Dict *dict = static_cast<Dict *>( _dict );
+
+  // RevMatchResult testResult = RevMatch( llvm::StringRef("MultiplyScalar"), llvm::StringRef("MulSca") );
+  // (void)testResult;
+
   llvm::SmallVector<llvm::StringRef, 8> needle;
   for ( unsigned i = 0; i < numCStrs; ++i )
     needle.push_back( cStrs[i] );
