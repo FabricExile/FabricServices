@@ -117,8 +117,7 @@ static inline RevMatchResult RevMatch(
   RevMatchResult bestResult;
   bestResult.score.penalty = Sq( haystack.size() + 1 );
   uint64_t tail = 0;
-  while ( !needle.empty()
-    && haystack.size() >= needle.size() )
+  while ( !haystack.empty() )
   {
     RevMatchResult thisResult;
     thisResult.size = CommonSuffixLength( haystack, needle );
@@ -564,8 +563,15 @@ FabricServices_SplitSearch_Matches FabricServices_SplitSearch_Dict_Search(
 {
   Dict *dict = static_cast<Dict *>( _dict );
 
-  // RevMatchResult testResult = RevMatch( llvm::StringRef("MultiplyScalar"), llvm::StringRef("MulSca") );
-  // (void)testResult;
+  llvm::StringRef testHaystack[] = {
+    "Mat44",
+    "MultiplyVector3"
+  };
+  llvm::StringRef testNeedle[] = {
+    "mat4mul"
+  };
+  Score testScore = ScoreMatch( testHaystack, testNeedle );
+  (void)testScore;
 
   llvm::SmallVector<llvm::StringRef, 8> needle;
   for ( unsigned i = 0; i < numCStrs; ++i )
