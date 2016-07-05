@@ -58,9 +58,16 @@ if env['FABRIC_BUILD_OS'] == 'Linux':
 if env['FABRIC_BUILD_OS'] == 'Darwin':
   basename = '.'.join(['lib' + libName, majMinRevVer, 'dylib'])
 
-splitSearchLib = env.SharedLibrary(libDir.File(basename), sources)
 if env['FABRIC_BUILD_OS'] == 'Windows':
+  splitSearchLibFile = env.File(basename)
+else:
+  splitSearchLibFile = libDir.File(basename)
+
+splitSearchLib = env.SharedLibrary(splitSearchLibFile, sources)
+if env['FABRIC_BUILD_OS'] == 'Windows':
+  splitSearchLibDotLib = env.Install(libDir, splitSearchLib[2:])
   splitSearchLib = env.Install(binDir, splitSearchLib[:2])
+  env.Depends(splitSearchLib, splitSearchLibDotLib)
 if env['FABRIC_BUILD_OS'] == 'Linux':
   env.AddPostAction(
     splitSearchLib,
