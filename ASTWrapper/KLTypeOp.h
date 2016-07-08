@@ -33,6 +33,7 @@ namespace FabricServices
         OpType_Mul,
         OpType_Div,
         OpType_Neg,
+        OpType_Pos,
 
         OpType_NumElements
       };

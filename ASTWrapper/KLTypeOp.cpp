@@ -88,9 +88,9 @@ KLTypeOp::KLTypeOp(const KLFile* klFile, JSONData data)
     std::string uniOpType = getStringDictValue("uniOpType");
     FTL::StrToLower(uniOpType);
     if(uniOpType == "neg")
-    {
       m_op = OpType_Neg;
-    }
+    else if(uniOpType == "pos")
+      m_op = OpType_Pos;
     else
     {
       std::string message = "ASTUniOpDecl contains unsupport uniOpType '"+uniOpType+"'.";
@@ -189,6 +189,11 @@ const std::string & KLTypeOp::getName() const
         m_name = "-";
         break;
       }
+      case(OpType_Pos):
+      {
+        m_name = "+";
+        break;
+      }
       case(OpType_NumElements): break;
     }
   }
@@ -221,6 +226,7 @@ const std::string & KLTypeOp::getReturnType() const
         break;
       }
       case(OpType_Neg):
+      case(OpType_Pos):
       {
         break;
       }
@@ -308,6 +314,7 @@ std::string KLTypeOp::getKLCode(bool includeReturnType, bool includeKeyWord, boo
       break;
     }
     case(OpType_Neg):
+    case(OpType_Pos):
     {
       code += getLhs()+"()";
       break;
