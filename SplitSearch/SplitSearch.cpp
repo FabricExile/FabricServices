@@ -196,20 +196,22 @@ class Match
 {
   void const *m_userdata;
   Score m_score;
+  int m_priority;
 
 public:
 
-  Match( void const *userdata, Score score ) :
-    m_userdata( userdata ), m_score( score ) {}
+  Match( void const *userdata, Score score, int priority ) :
+    m_userdata( userdata ), m_score( score ), m_priority( priority ) {}
 
   void const *getUserdata() const { return m_userdata; }
 
   void dump( size_t index )
   {
-    printf( "index=%u score.points=%u score.penalty=%u userdata=%s\n",
+    printf( "index=%u score.points=%u score.penalty=%u priority=%d userdata=%s\n",
       unsigned( index ),
       unsigned( m_score.points ),
       unsigned( m_score.penalty ),
+      m_priority,
       (char const *)m_userdata
       );
   }
@@ -218,7 +220,9 @@ public:
   {
     bool operator()( Match const &lhs, Match const &rhs )
     {
-      return lhs.m_score > rhs.m_score;
+      return lhs.m_priority > rhs.m_priority
+        || ( lhs.m_priority == rhs.m_priority
+          && lhs.m_score > rhs.m_score );
     }
   };
 };
@@ -261,9 +265,9 @@ public:
 
   Matches() {}
 
-  void add( void const *userdata, Score score )
+  void add( void const *userdata, Score score, int priority )
   {
-    m_impl.push_back( Match( userdata, score ) );
+    m_impl.push_back( Match( userdata, score, priority ) );
   }
 
   void sort() { std::sort( m_impl.begin(), m_impl.end(), Match::LessThan() ); }
@@ -305,6 +309,7 @@ static inline llvm::ArrayRef<llvm::StringRef> DropFront(
 class Node
 {
   void const *m_userdata;
+  int m_priority;
   llvm::StringMap< std::unique_ptr<Node> > m_children;
 
 protected:
@@ -324,7 +329,7 @@ protected:
       {
         Score score = ScoreMatch( prefixes, needle );
         if ( score.isValid() )
-          matches->add( it->second->m_userdata, score );
+          matches->add( it->second->m_userdata, score, it->second->m_priority );
       }
 
       std::unique_ptr<Node> const &node = it->second;
@@ -336,7 +341,7 @@ protected:
 
 public:
 
-  Node( void *userdata ) : m_userdata( userdata ) {}
+  Node( void *userdata ) : m_userdata( userdata ), m_priority( -1 ) {}
   Node( Node const & ) = delete;
   Node &operator=( Node const & ) = delete;
   ~Node() {}
@@ -394,12 +399,58 @@ public:
     llvm::SmallVector<llvm::StringRef, 8> prefixes;
     search( prefixes, needle, matches );
   }
+
+  int loadPrefsFromJSON( FTL::JSONObject const *jsonObject )
+  {
+    int highest = m_priority = jsonObject->getSInt32OrDefault( FTL_STR("priority"), -1 );
+    if ( FTL::JSONObject const *childJSONObject = jsonObject->maybeGetObject( FTL_STR("children") ) )
+    {
+      for ( FTL::JSONObject::const_iterator it = childJSONObject->begin();
+        it != childJSONObject->end(); ++it )
+      {
+        FTL::StrRef childName = it->first;
+        if ( FTL::JSONObject const *childJSONObject = it->second->maybeCastOrNull<FTL::JSONObject>() )
+        {
+          llvm::StringMap< std::unique_ptr<Node> >::iterator jt =
+            m_children.find( llvm::StringRef( childName.data(), childName.size() ) );
+          if ( jt != m_children.end() )
+            highest = std::max(
+              highest,
+              jt->second->loadPrefsFromJSON( childJSONObject )
+              );
+        }
+      }
+    }
+    return highest;
+  }
+
+  FTL::JSONObject *savePrefsToJSON()
+  {
+    FTL::OwnedPtr<FTL::JSONObject> childrenJSONObject( new FTL::JSONObject );
+    for ( llvm::StringMap< std::unique_ptr<Node> >::const_iterator it =
+      m_children.begin(); it != m_children.end(); ++it )
+    {
+      FTL::OwnedPtr<FTL::JSONObject> childPrefs( it->second->savePrefsToJSON() );
+      if ( !childPrefs->empty() )
+        childrenJSONObject->insert(
+          FTL::StrRef( it->first().data(), it->first().size() ),
+          childPrefs.take()
+          );
+    }
+
+    FTL::JSONObject *resultJSONObject = new FTL::JSONObject;
+    if ( m_priority != -1 )
+      resultJSONObject->insert( FTL_STR("priority"), new FTL::JSONSInt32( m_priority ) );
+    if ( !childrenJSONObject->empty() )
+      resultJSONObject->insert( FTL_STR("children"), childrenJSONObject.take() );
+    return resultJSONObject;
+  }
 };
 
 class Dict : public Shareable
 {
   Node m_root;
-  FTL::OwnedPtr<FTL::JSONObject> m_prefs;
+  int m_nextPriority;
 
   Dict( Dict const & ) = delete;
   Dict &operator=( Dict const & ) = delete;
@@ -410,7 +461,7 @@ protected:
 
 public:
 
-  Dict() : m_root( nullptr ) {}
+  Dict() : m_root( nullptr ), m_nextPriority( 0 ) {}
 
   bool add(
     llvm::ArrayRef<llvm::StringRef> strs,
@@ -466,7 +517,9 @@ public:
               );
             if ( !jsonValue )
               break;
-            m_prefs = jsonValue->cast<FTL::JSONObject>();
+            m_nextPriority = m_root.loadPrefsFromJSON(
+              jsonValue->cast<FTL::JSONObject>()
+              ) + 1;
           }
           catch ( FTL::JSONException e )
           {
@@ -486,17 +539,17 @@ public:
 
   void savePrefs( char const *filename )
   {
-    if ( m_prefs )
+    try
     {
-      try
-      {
-        std::ofstream outFile( filename );
-        outFile << m_prefs->encode() << '\n';
-      }
-      catch ( ... )
-      {
-        std::cerr << "'" << filename << "': Unable to save";
-      }
+      FTL::OwnedPtr<FTL::JSONObject> prefs( new FTL::JSONObject );
+      prefs->insert( FTL_STR("nodes"), m_root.savePrefsToJSON() );
+
+      std::ofstream outFile( filename );
+      outFile << prefs->encode() << '\n';
+    }
+    catch ( ... )
+    {
+      std::cerr << "'" << filename << "': Unable to save";
     }
   }
 };
