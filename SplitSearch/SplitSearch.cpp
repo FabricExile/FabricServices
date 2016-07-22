@@ -3,13 +3,19 @@
  */
 
 #include "SplitSearch.hpp"
+#include <FTL/FS.h>
+#include <FTL/JSONValue.h>
 
 #include <ctype.h>
+#include <fstream>
+#include <iostream>
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/SmallString.h>
+#include <llvm/ADT/StringMap.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <streambuf>
+#include <string>
 #include <vector>
 
 namespace FabricServices { namespace SplitSearch { namespace Impl {
@@ -393,6 +399,7 @@ public:
 class Dict : public Shareable
 {
   Node m_root;
+  FTL::OwnedPtr<FTL::JSONObject> m_prefs;
 
   Dict( Dict const & ) = delete;
   Dict &operator=( Dict const & ) = delete;
@@ -436,6 +443,61 @@ public:
     matches->sort();
     // matches->dump();
     return matches;
+  }
+
+  void loadPrefs( char const *filename )
+  {
+    if ( FTL::FSExists( filename ) )
+    {
+      try
+      {
+        std::ifstream file( filename );
+        std::string jsonStr = std::string(
+          std::istreambuf_iterator<char>( file ),
+          std::istreambuf_iterator<char>()
+          );
+        FTL::JSONStrWithLoc jsonStrWithLoc( jsonStr );
+        for (;;)
+        {
+          try
+          {
+            FTL::OwnedPtr<FTL::JSONValue> jsonValue(
+              FTL::JSONValue::Decode( jsonStrWithLoc )
+              );
+            if ( !jsonValue )
+              break;
+            m_prefs = jsonValue->cast<FTL::JSONObject>();
+          }
+          catch ( FTL::JSONException e )
+          {
+            std::cerr
+              << "'" << filename << "': Caught exception: "
+              << e.getDesc()
+              << "\n";
+          }
+        }
+      }
+      catch ( ... )
+      {
+        std::cerr << "'" << filename << "': Unable to load";
+      }
+    }
+  }
+
+  void savePrefs( char const *filename )
+  {
+    if ( m_prefs )
+    {
+      try
+      {
+        std::ofstream outFile( filename );
+        outFile << m_prefs->encode() << '\n';
+      }
+      catch ( ... )
+      {
+        std::cerr << "'" << filename << "': Unable to save";
+      }
+    }
   }
 };
 
@@ -482,7 +544,8 @@ unsigned FabricServices_SplitSearch_Matches_GetUserdatas(
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL
-FabricServices_SplitSearch_Dict FabricServices_SplitSearch_Dict_Create()
+FabricServices_SplitSearch_Dict FabricServices_SplitSearch_Dict_Create(
+  )
 {
   return new Dict;
 }
@@ -555,6 +618,26 @@ void FabricServices_SplitSearch_Dict_Clear(
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL
+void FabricServices_SplitSearch_Dict_LoadPrefs(
+  FabricServices_SplitSearch_Dict _dict,
+  char const *filename
+  )
+{
+  Dict *dict = static_cast<Dict *>( _dict );
+  dict->loadPrefs( filename );
+}
+
+FABRICSERVICES_SPLITSEARCH_DECL
+void FabricServices_SplitSearch_Dict_SavePrefs(
+  FabricServices_SplitSearch_Dict _dict,
+  char const *filename
+  )
+{
+  Dict *dict = static_cast<Dict *>( _dict );
+  dict->savePrefs( filename );
+}
+
+FABRICSERVICES_SPLITSEARCH_DECL
 FabricServices_SplitSearch_Matches FabricServices_SplitSearch_Dict_Search(
   FabricServices_SplitSearch_Dict _dict,
   unsigned numCStrs,
@@ -563,15 +646,15 @@ FabricServices_SplitSearch_Matches FabricServices_SplitSearch_Dict_Search(
 {
   Dict *dict = static_cast<Dict *>( _dict );
 
-  llvm::StringRef testHaystack[] = {
-    "Mat44",
-    "MultiplyVector3"
-  };
-  llvm::StringRef testNeedle[] = {
-    "mat4mul"
-  };
-  Score testScore = ScoreMatch( testHaystack, testNeedle );
-  (void)testScore;
+  // llvm::StringRef testHaystack[] = {
+  //   "Mat44",
+  //   "MultiplyVector3"
+  // };
+  // llvm::StringRef testNeedle[] = {
+  //   "mat4mul"
+  // };
+  // Score testScore = ScoreMatch( testHaystack, testNeedle );
+  // (void)testScore;
 
   llvm::SmallVector<llvm::StringRef, 8> needle;
   for ( unsigned i = 0; i < numCStrs; ++i )

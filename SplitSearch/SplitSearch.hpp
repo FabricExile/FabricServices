@@ -56,7 +56,8 @@ void FabricServices_SplitSearch_Matches_Release(
 typedef void *FabricServices_SplitSearch_Dict;
 
 FABRICSERVICES_SPLITSEARCH_DECL
-FabricServices_SplitSearch_Dict FabricServices_SplitSearch_Dict_Create();
+FabricServices_SplitSearch_Dict FabricServices_SplitSearch_Dict_Create(
+  );
 
 FABRICSERVICES_SPLITSEARCH_DECL
 void FabricServices_SplitSearch_Dict_Retain(
@@ -103,6 +104,18 @@ bool FabricServices_SplitSearch_Dict_Remove_Delimited(
 FABRICSERVICES_SPLITSEARCH_DECL
 void FabricServices_SplitSearch_Dict_Clear(
   FabricServices_SplitSearch_Dict dict
+  );
+
+FABRICSERVICES_SPLITSEARCH_DECL
+void FabricServices_SplitSearch_Dict_LoadPrefs(
+  FabricServices_SplitSearch_Dict dict,
+  char const *filename
+  );
+
+FABRICSERVICES_SPLITSEARCH_DECL
+void FabricServices_SplitSearch_Dict_SavePrefs(
+  FabricServices_SplitSearch_Dict dict,
+  char const *filename
   );
 
 FABRICSERVICES_SPLITSEARCH_DECL
@@ -270,6 +283,16 @@ public:
     return Matches(
       FabricServices_SplitSearch_Dict_Search( _dict, numCStrs, cStrs )
       );
+  }
+
+  void loadPrefs( char const *filename )
+  {
+    FabricServices_SplitSearch_Dict_LoadPrefs( _dict, filename );
+  }
+
+  void savePrefs( char const *filename ) const
+  {
+    FabricServices_SplitSearch_Dict_SavePrefs( _dict, filename );
   }
 };
 
