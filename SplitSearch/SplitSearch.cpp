@@ -7,6 +7,7 @@
 #include <FTL/JSONValue.h>
 
 #include <ctype.h>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <llvm/ADT/ArrayRef.h>
@@ -192,17 +193,34 @@ static inline Score ScoreMatch(
     return Score::Invalid();
 }
 
+static inline llvm::ArrayRef<llvm::StringRef> DropFront(
+  llvm::ArrayRef<llvm::StringRef> strs
+  )
+{
+  return llvm::ArrayRef<llvm::StringRef>( strs.begin() + 1, strs.end() );
+}
+
+class Node;
+
 class Match
 {
+  Node *m_node;
   void const *m_userdata;
   Score m_score;
   int m_priority;
 
 public:
 
-  Match( void const *userdata, Score score, int priority ) :
-    m_userdata( userdata ), m_score( score ), m_priority( priority ) {}
+  // Only exists for resize down
+  Match()
+    : m_node( 0 )
+    , m_userdata( 0 )
+    {}
 
+  Match( Node *node, void const *userdata, Score score, int priority ) :
+    m_node( node ), m_userdata( userdata ), m_score( score ), m_priority( priority ) {}
+
+  Node *getNode() const { return m_node; }
   void const *getUserdata() const { return m_userdata; }
 
   void dump( size_t index )
@@ -265,9 +283,9 @@ public:
 
   Matches() {}
 
-  void add( void const *userdata, Score score, int priority )
+  void add( Node *node, void const *userdata, Score score, int priority )
   {
-    m_impl.push_back( Match( userdata, score, priority ) );
+    m_impl.push_back( Match( node, userdata, score, priority ) );
   }
 
   void sort() { std::sort( m_impl.begin(), m_impl.end(), Match::LessThan() ); }
@@ -284,6 +302,14 @@ public:
 
   unsigned getSize() const { return m_impl.size(); }
 
+  void const *getUserdata( unsigned index )
+  {
+    if ( index < m_impl.size() )
+      return m_impl[index].getUserdata();
+    else
+      return NULL;
+  }
+
   unsigned getUserdatas(
     unsigned max,
     void const **userdatas
@@ -297,20 +323,22 @@ public:
     }
     return index;
   }
+
+  void keepFirst( unsigned count )
+    { m_impl.resize( std::min( m_impl.size(), size_t( count ) ) ); }
+
+  Match const *getMatch( unsigned index ) const
+    { return &m_impl[index]; }
 };
 
-static inline llvm::ArrayRef<llvm::StringRef> DropFront(
-  llvm::ArrayRef<llvm::StringRef> strs
-  )
-{
-  return llvm::ArrayRef<llvm::StringRef>( strs.begin() + 1, strs.end() );
-}
+class Dict;
 
 class Node
 {
+  Dict *m_dict;
   void const *m_userdata;
   int m_priority;
-  llvm::StringMap< std::unique_ptr<Node> > m_children;
+  llvm::StringMap< FTL::OwnedPtr<Node> > m_children;
 
 protected:
 
@@ -318,21 +346,23 @@ protected:
     llvm::SmallVector<llvm::StringRef, 8> &prefixes,
     llvm::ArrayRef<llvm::StringRef> needle,
     Matches *matches
-    ) const
+    )
   {
-    for ( llvm::StringMap< std::unique_ptr<Node> >::const_iterator it =
+    for ( llvm::StringMap< FTL::OwnedPtr<Node> >::iterator it =
       m_children.begin(); it != m_children.end(); ++it )
     {
-      prefixes.push_back( it->first() );
+      llvm::StringRef prefix = it->first();
+      Node *node = it->second.get();
 
-      if ( it->second->m_userdata )
+      prefixes.push_back( prefix );
+
+      if ( node->m_userdata )
       {
         Score score = ScoreMatch( prefixes, needle );
         if ( score.isValid() )
-          matches->add( it->second->m_userdata, score, it->second->m_priority );
-      }
+          matches->add( node, node->m_userdata, score, node->m_priority );
+      } 
 
-      std::unique_ptr<Node> const &node = it->second;
       node->search( prefixes, needle, matches );
 
       prefixes.pop_back();
@@ -341,10 +371,17 @@ protected:
 
 public:
 
-  Node( void *userdata ) : m_userdata( userdata ), m_priority( -1 ) {}
+  Node( Dict *dict, void *userdata )
+    : m_dict( dict )
+    , m_userdata( userdata )
+    , m_priority( -1 )
+    {}
   Node( Node const & ) = delete;
   Node &operator=( Node const & ) = delete;
   ~Node() {}
+
+  Dict *getDict() const
+    { return m_dict; }
 
   bool add(
     llvm::ArrayRef<llvm::StringRef> strs,
@@ -353,9 +390,9 @@ public:
   {
     if ( !strs.empty() )
     {
-      std::unique_ptr<Node> &child = m_children[strs.front()];
+      FTL::OwnedPtr<Node> &child = m_children[strs.front()];
       if ( !child )
-        child = std::unique_ptr<Node>( new Node( nullptr ) );
+        child = new Node( m_dict, nullptr );
       return child->add( DropFront( strs ), userdata );
     }
     else
@@ -373,7 +410,7 @@ public:
   {
     if ( !strs.empty() )
     {
-      std::unique_ptr<Node> &child = m_children[strs.front()];
+      FTL::OwnedPtr<Node> &child = m_children[strs.front()];
       if ( !child )
         return false;
       return child->remove( DropFront( strs ), userdata );
@@ -386,6 +423,9 @@ public:
     }
   }
 
+  void setPriority( int priority )
+    { m_priority = priority; }
+
   void clear()
   {
     m_children.clear();
@@ -394,7 +434,7 @@ public:
   void search(
     llvm::ArrayRef<llvm::StringRef> needle,
     Matches *matches
-    ) const
+    )
   {
     llvm::SmallVector<llvm::StringRef, 8> prefixes;
     search( prefixes, needle, matches );
@@ -411,7 +451,7 @@ public:
         FTL::StrRef childName = it->first;
         if ( FTL::JSONObject const *childJSONObject = it->second->maybeCastOrNull<FTL::JSONObject>() )
         {
-          llvm::StringMap< std::unique_ptr<Node> >::iterator jt =
+          llvm::StringMap< FTL::OwnedPtr<Node> >::iterator jt =
             m_children.find( llvm::StringRef( childName.data(), childName.size() ) );
           if ( jt != m_children.end() )
             highest = std::max(
@@ -427,7 +467,7 @@ public:
   FTL::JSONObject *savePrefsToJSON()
   {
     FTL::OwnedPtr<FTL::JSONObject> childrenJSONObject( new FTL::JSONObject );
-    for ( llvm::StringMap< std::unique_ptr<Node> >::const_iterator it =
+    for ( llvm::StringMap< FTL::OwnedPtr<Node> >::iterator it =
       m_children.begin(); it != m_children.end(); ++it )
     {
       FTL::OwnedPtr<FTL::JSONObject> childPrefs( it->second->savePrefsToJSON() );
@@ -461,7 +501,10 @@ protected:
 
 public:
 
-  Dict() : m_root( nullptr ), m_nextPriority( 0 ) {}
+  Dict() : m_root( this, nullptr ), m_nextPriority( 0 ) {}
+
+  int getNextPriority()
+    { return m_nextPriority++; }
 
   bool add(
     llvm::ArrayRef<llvm::StringRef> strs,
@@ -484,7 +527,7 @@ public:
     m_root.clear();
   }
 
-  Matches *search( llvm::ArrayRef<llvm::StringRef> needle ) const
+  Matches *search( llvm::ArrayRef<llvm::StringRef> needle )
   {
     if ( needle.empty() )
       return nullptr;
@@ -517,9 +560,14 @@ public:
               );
             if ( !jsonValue )
               break;
-            m_nextPriority = m_root.loadPrefsFromJSON(
-              jsonValue->cast<FTL::JSONObject>()
-              ) + 1;
+            FTL::JSONObject const *jsonObject =
+              jsonValue->cast<FTL::JSONObject>();
+            if ( FTL::JSONValue const *nodesJSONValue =
+              jsonObject->maybeGet( FTL_STR("nodes") ) )
+              if ( FTL::JSONObject const *nodesJSONObject =
+                nodesJSONValue->maybeCastOrNull<FTL::JSONObject>() )
+                m_nextPriority =
+                  m_root.loadPrefsFromJSON( nodesJSONObject ) + 1;
           }
           catch ( FTL::JSONException e )
           {
@@ -586,6 +634,21 @@ unsigned FabricServices_SplitSearch_Matches_GetSize(
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL
+const void *FabricServices_SplitSearch_Matches_GetUserdata(
+  FabricServices_SplitSearch_Matches _matches,
+  unsigned index
+  )
+{
+  Matches *matches = static_cast<Matches *>( _matches );
+  if ( index >= matches->getSize() )
+  {
+    std::cerr << "SplitSearch.Matches.getUserdata: index out of range\n";
+    return 0;
+  }
+  else return matches->getUserdata( index );
+}
+
+FABRICSERVICES_SPLITSEARCH_DECL
 unsigned FabricServices_SplitSearch_Matches_GetUserdatas(
   FabricServices_SplitSearch_Matches _matches,
   unsigned max,
@@ -594,6 +657,33 @@ unsigned FabricServices_SplitSearch_Matches_GetUserdatas(
 {
   Matches *matches = static_cast<Matches *>( _matches );
   return matches->getUserdatas( max, userdatas );
+}
+
+FABRICSERVICES_SPLITSEARCH_DECL
+void FabricServices_SplitSearch_Matches_Select(
+  FabricServices_SplitSearch_Matches _matches,
+  unsigned index
+  )
+{
+  Matches const *matches = static_cast<Matches const *>( _matches );
+  if ( index >= matches->getSize() )
+    std::cerr << "SplitSearch.Matches.select: index out of range\n";
+  else
+  {
+    Match const *match = matches->getMatch( index );
+    Node *node = match->getNode();
+    node->setPriority( node->getDict()->getNextPriority() );
+  }
+}
+
+FABRICSERVICES_SPLITSEARCH_DECL
+void FabricServices_SplitSearch_Matches_KeepFirst(
+  FabricServices_SplitSearch_Matches _matches,
+  unsigned count
+  )
+{
+  Matches *matches = static_cast<Matches *>( _matches );
+  matches->keepFirst( count );
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL

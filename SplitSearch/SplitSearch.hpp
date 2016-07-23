@@ -37,10 +37,28 @@ unsigned FabricServices_SplitSearch_Matches_GetSize(
   );
 
 FABRICSERVICES_SPLITSEARCH_DECL
+void const *FabricServices_SplitSearch_Matches_GetUserdata(
+  FabricServices_SplitSearch_Matches _matches,
+  unsigned index
+  );
+
+FABRICSERVICES_SPLITSEARCH_DECL
 unsigned FabricServices_SplitSearch_Matches_GetUserdatas(
   FabricServices_SplitSearch_Matches _matches,
   unsigned max,
   void const **userdatas
+  );
+
+FABRICSERVICES_SPLITSEARCH_DECL
+void FabricServices_SplitSearch_Matches_KeepFirst(
+  FabricServices_SplitSearch_Matches _matches,
+  unsigned count
+  );
+
+FABRICSERVICES_SPLITSEARCH_DECL
+void FabricServices_SplitSearch_Matches_Select(
+  FabricServices_SplitSearch_Matches _matches,
+  unsigned index
   );
 
 FABRICSERVICES_SPLITSEARCH_DECL
@@ -148,6 +166,14 @@ public:
       FabricServices_SplitSearch_Matches_Retain( _matches );
   }
 
+#if FTL_HAS_RVALUE_REFERENCES
+  Matches( Matches &&that )
+    : _matches( that._matches )
+  {
+    that._matches = 0;
+  }
+#endif
+  
   Matches &operator=( Matches const &that )
   {
     if ( _matches != that._matches )
@@ -160,6 +186,17 @@ public:
     }
     return *this;
   }
+  
+#if FTL_HAS_RVALUE_REFERENCES
+  Matches &operator=( Matches &&that )
+  {
+    if ( _matches )
+      FabricServices_SplitSearch_Matches_Release( _matches );
+    _matches = that._matches;
+    that._matches = 0;
+    return *this;
+  }
+#endif
 
   ~Matches()
   {
@@ -167,16 +204,53 @@ public:
       FabricServices_SplitSearch_Matches_Release( _matches );
   }
 
+  void clear()
+  {
+    if ( _matches )
+    {
+      FabricServices_SplitSearch_Matches_Release( _matches );
+      _matches = 0;
+    }
+  }
+
   unsigned getSize() const
   {
-    return FabricServices_SplitSearch_Matches_GetSize( _matches );
+    if ( _matches )
+      return FabricServices_SplitSearch_Matches_GetSize( _matches );
+    else
+      return 0;
+  }
+
+  void const *getUserdata( unsigned index ) const
+  {
+    if ( _matches )
+      return FabricServices_SplitSearch_Matches_GetUserdata( _matches, index );
+    else
+      return 0;
   }
 
   unsigned getUserdatas( unsigned max, void const **userdatas ) const
   {
-    return FabricServices_SplitSearch_Matches_GetUserdatas(
-      _matches, max, userdatas
-      );
+    if ( _matches )
+      return FabricServices_SplitSearch_Matches_GetUserdatas(
+        _matches, max, userdatas
+        );
+    else
+      return 0;
+  }
+
+  void select(
+    unsigned matchIndex
+    )
+  {
+    if ( _matches )
+      FabricServices_SplitSearch_Matches_Select( _matches, matchIndex );
+  }
+
+  void keepFirst( unsigned count )
+  {
+    if ( _matches )
+      FabricServices_SplitSearch_Matches_KeepFirst( _matches, count );
   }
 };
 
