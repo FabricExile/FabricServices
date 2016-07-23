@@ -207,7 +207,8 @@ class Match
   Node *m_node;
   void const *m_userdata;
   Score m_score;
-  int m_priority;
+  unsigned m_echelon;
+  unsigned m_priority;
 
 public:
 
@@ -217,18 +218,30 @@ public:
     , m_userdata( 0 )
     {}
 
-  Match( Node *node, void const *userdata, Score score, int priority ) :
-    m_node( node ), m_userdata( userdata ), m_score( score ), m_priority( priority ) {}
+  Match(
+    Node *node,
+    void const *userdata,
+    Score score,
+    unsigned echelon,
+    unsigned priority
+    )
+    : m_node( node )
+    , m_userdata( userdata )
+    , m_score( score )
+    , m_echelon( echelon )
+    , m_priority( priority )
+    {}
 
   Node *getNode() const { return m_node; }
   void const *getUserdata() const { return m_userdata; }
 
   void dump( size_t index )
   {
-    printf( "index=%u score.points=%u score.penalty=%u priority=%d userdata=%s\n",
+    printf( "index=%u score.points=%u score.penalty=%u echelon=%u priority=%u userdata=%s\n",
       unsigned( index ),
       unsigned( m_score.points ),
       unsigned( m_score.penalty ),
+      m_echelon,
       m_priority,
       (char const *)m_userdata
       );
@@ -238,9 +251,11 @@ public:
   {
     bool operator()( Match const &lhs, Match const &rhs )
     {
-      return lhs.m_priority > rhs.m_priority
-        || ( lhs.m_priority == rhs.m_priority
-          && lhs.m_score > rhs.m_score );
+      return lhs.m_echelon > rhs.m_echelon
+        || ( lhs.m_echelon == rhs.m_echelon
+          && ( lhs.m_priority > rhs.m_priority
+            || ( lhs.m_priority == rhs.m_priority
+              && lhs.m_score > rhs.m_score ) ) );
     }
   };
 };
@@ -283,9 +298,15 @@ public:
 
   Matches() {}
 
-  void add( Node *node, void const *userdata, Score score, int priority )
+  void add(
+    Node *node,
+    void const *userdata,
+    Score score,
+    unsigned echelon,
+    unsigned priority
+    )
   {
-    m_impl.push_back( Match( node, userdata, score, priority ) );
+    m_impl.push_back( Match( node, userdata, score, echelon, priority ) );
   }
 
   void sort() { std::sort( m_impl.begin(), m_impl.end(), Match::LessThan() ); }
@@ -337,7 +358,8 @@ class Node
 {
   Dict *m_dict;
   void const *m_userdata;
-  int m_priority;
+  unsigned m_echelon;
+  unsigned m_priority;
   llvm::StringMap< FTL::OwnedPtr<Node> > m_children;
 
 protected:
@@ -360,7 +382,13 @@ protected:
       {
         Score score = ScoreMatch( prefixes, needle );
         if ( score.isValid() )
-          matches->add( node, node->m_userdata, score, node->m_priority );
+          matches->add(
+            node,
+            node->m_userdata,
+            score,
+            node->m_echelon,
+            node->m_priority
+            );
       } 
 
       node->search( prefixes, needle, matches );
@@ -371,9 +399,15 @@ protected:
 
 public:
 
-  Node( Dict *dict, void *userdata, int priority )
+  Node(
+    Dict *dict,
+    void *userdata,
+    unsigned echelon,
+    unsigned priority
+    )
     : m_dict( dict )
     , m_userdata( userdata )
+    , m_echelon( echelon )
     , m_priority( priority )
     {}
   Node( Node const & ) = delete;
@@ -386,20 +420,22 @@ public:
   bool add(
     llvm::ArrayRef<llvm::StringRef> strs,
     void const *userdata,
-    int priority
+    unsigned echelon,
+    unsigned priority
     )
   {
     if ( !strs.empty() )
     {
       FTL::OwnedPtr<Node> &child = m_children[strs.front()];
       if ( !child )
-        child = new Node( m_dict, nullptr, priority );
-      return child->add( DropFront( strs ), userdata, priority );
+        child = new Node( m_dict, nullptr, echelon, priority );
+      return child->add( DropFront( strs ), userdata, echelon, priority );
     }
     else
     {
       if ( !m_userdata )
         m_userdata = userdata;
+      m_echelon = std::max( m_echelon, echelon );
       m_priority = std::max( m_priority, priority );
       return m_userdata == userdata;
     }
@@ -444,7 +480,7 @@ public:
 
   int loadPrefsFromJSON( FTL::JSONObject const *jsonObject )
   {
-    int highest = m_priority = jsonObject->getSInt32OrDefault( FTL_STR("priority"), -1 );
+    int highest = m_priority = jsonObject->getSInt32OrDefault( FTL_STR("priority"), 0 );
     if ( FTL::JSONObject const *childJSONObject = jsonObject->maybeGetObject( FTL_STR("children") ) )
     {
       for ( FTL::JSONObject::const_iterator it = childJSONObject->begin();
@@ -481,7 +517,7 @@ public:
     }
 
     FTL::JSONObject *resultJSONObject = new FTL::JSONObject;
-    if ( m_priority != -1 )
+    if ( m_priority != 0 )
       resultJSONObject->insert( FTL_STR("priority"), new FTL::JSONSInt32( m_priority ) );
     if ( !childrenJSONObject->empty() )
       resultJSONObject->insert( FTL_STR("children"), childrenJSONObject.take() );
@@ -503,7 +539,7 @@ protected:
 
 public:
 
-  Dict() : m_root( this, nullptr, -1 ), m_nextPriority( 0 ) {}
+  Dict() : m_root( this, nullptr, 0, 0 ), m_nextPriority( 1 ) {}
 
   int getNextPriority()
     { return m_nextPriority++; }
@@ -511,10 +547,11 @@ public:
   bool add(
     llvm::ArrayRef<llvm::StringRef> strs,
     void const *userdata,
-    int priority
+    unsigned echelon,
+    unsigned priority
     )
   {
-    return m_root.add( strs, userdata, priority );
+    return m_root.add( strs, userdata, echelon, priority );
   }
 
   bool remove(
@@ -702,14 +739,15 @@ bool FabricServices_SplitSearch_Dict_Add(
   unsigned numCStrs,
   char const * const *cStrs,
   void const *userdata,
-  int priority
+  unsigned echelon,
+  unsigned priority
   )
 {
   Dict *dict = static_cast<Dict *>( _dict );
   llvm::SmallVector<llvm::StringRef, 8> strs;
   while ( numCStrs-- > 0 )
     strs.push_back( *cStrs++ );
-  return dict->add( strs, userdata, priority );
+  return dict->add( strs, userdata, echelon, priority );
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL
@@ -718,13 +756,14 @@ bool FabricServices_SplitSearch_Dict_Add_Delimited(
   char const *delimitedCStr,
   char delimiter,
   void const *userdata,
-  int priority
+  unsigned echelon,
+  unsigned priority
   )
 {
   Dict *dict = static_cast<Dict *>( _dict );
   llvm::SmallVector<llvm::StringRef, 8> strs;
   SplitDelimitedString( delimitedCStr, delimiter, strs );
-  return dict->add( strs, userdata, priority );
+  return dict->add( strs, userdata, echelon, priority );
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL

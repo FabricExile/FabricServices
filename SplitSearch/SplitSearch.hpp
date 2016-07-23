@@ -93,7 +93,8 @@ bool FabricServices_SplitSearch_Dict_Add(
   unsigned numCStrs,
   char const * const *cStrs,
   void const *userdata,
-  int priority
+  unsigned echelon,
+  unsigned priority
   );
 
 FABRICSERVICES_SPLITSEARCH_DECL
@@ -102,7 +103,8 @@ bool FabricServices_SplitSearch_Dict_Add_Delimited(
   char const *delimitedCStr,
   char delimiter,
   void const *userdata,
-  int priority
+  unsigned echelon,
+  unsigned priority
   );
 
 FABRICSERVICES_SPLITSEARCH_DECL
@@ -294,7 +296,8 @@ public:
     unsigned numCStrs,
     char const * const *cStrs,
     void const *userdata,
-    int priority = -1
+    unsigned echelon = 0,
+    unsigned priority = 0
     )
   {
     return FabricServices_SplitSearch_Dict_Add(
@@ -302,6 +305,7 @@ public:
       numCStrs,
       cStrs,
       userdata,
+      echelon,
       priority
       );
   }
@@ -310,7 +314,8 @@ public:
     char const *delimitedCStr,
     char delimiter,
     void const *userdata,
-    int priority = -1
+    unsigned echelon = 0,
+    unsigned priority = 0
     )
   {
     return FabricServices_SplitSearch_Dict_Add_Delimited(
@@ -318,6 +323,7 @@ public:
       delimitedCStr,
       delimiter,
       userdata,
+      echelon,
       priority
       );
   }
