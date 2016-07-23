@@ -371,10 +371,10 @@ protected:
 
 public:
 
-  Node( Dict *dict, void *userdata )
+  Node( Dict *dict, void *userdata, int priority )
     : m_dict( dict )
     , m_userdata( userdata )
-    , m_priority( -1 )
+    , m_priority( priority )
     {}
   Node( Node const & ) = delete;
   Node &operator=( Node const & ) = delete;
@@ -385,20 +385,22 @@ public:
 
   bool add(
     llvm::ArrayRef<llvm::StringRef> strs,
-    void const *userdata
+    void const *userdata,
+    int priority
     )
   {
     if ( !strs.empty() )
     {
       FTL::OwnedPtr<Node> &child = m_children[strs.front()];
       if ( !child )
-        child = new Node( m_dict, nullptr );
-      return child->add( DropFront( strs ), userdata );
+        child = new Node( m_dict, nullptr, priority );
+      return child->add( DropFront( strs ), userdata, priority );
     }
     else
     {
       if ( !m_userdata )
         m_userdata = userdata;
+      m_priority = std::max( m_priority, priority );
       return m_userdata == userdata;
     }
   }
@@ -501,17 +503,18 @@ protected:
 
 public:
 
-  Dict() : m_root( this, nullptr ), m_nextPriority( 0 ) {}
+  Dict() : m_root( this, nullptr, -1 ), m_nextPriority( 0 ) {}
 
   int getNextPriority()
     { return m_nextPriority++; }
 
   bool add(
     llvm::ArrayRef<llvm::StringRef> strs,
-    void const *userdata
+    void const *userdata,
+    int priority
     )
   {
-    return m_root.add( strs, userdata );
+    return m_root.add( strs, userdata, priority );
   }
 
   bool remove(
@@ -698,14 +701,15 @@ bool FabricServices_SplitSearch_Dict_Add(
   FabricServices_SplitSearch_Dict _dict,
   unsigned numCStrs,
   char const * const *cStrs,
-  void const *userdata
+  void const *userdata,
+  int priority
   )
 {
   Dict *dict = static_cast<Dict *>( _dict );
   llvm::SmallVector<llvm::StringRef, 8> strs;
   while ( numCStrs-- > 0 )
     strs.push_back( *cStrs++ );
-  return dict->add( strs, userdata );
+  return dict->add( strs, userdata, priority );
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL
@@ -713,13 +717,14 @@ bool FabricServices_SplitSearch_Dict_Add_Delimited(
   FabricServices_SplitSearch_Dict _dict,
   char const *delimitedCStr,
   char delimiter,
-  void const *userdata
+  void const *userdata,
+  int priority
   )
 {
   Dict *dict = static_cast<Dict *>( _dict );
   llvm::SmallVector<llvm::StringRef, 8> strs;
   SplitDelimitedString( delimitedCStr, delimiter, strs );
-  return dict->add( strs, userdata );
+  return dict->add( strs, userdata, priority );
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL
