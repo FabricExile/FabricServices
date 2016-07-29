@@ -208,7 +208,7 @@ class Match
   void const *m_userdata;
   Score m_score;
   unsigned m_echelon;
-  unsigned m_priority;
+  unsigned m_selectCount;
 
 public:
 
@@ -223,13 +223,13 @@ public:
     void const *userdata,
     Score score,
     unsigned echelon,
-    unsigned priority
+    unsigned selectCount
     )
     : m_node( node )
     , m_userdata( userdata )
     , m_score( score )
     , m_echelon( echelon )
-    , m_priority( priority )
+    , m_selectCount( selectCount )
     {}
 
   Node *getNode() const { return m_node; }
@@ -237,12 +237,12 @@ public:
 
   void dump( size_t index )
   {
-    printf( "index=%u score.points=%u score.penalty=%u echelon=%u priority=%u userdata=%s\n",
+    printf( "index=%u score.points=%u score.penalty=%u echelon=%u selectCount=%u userdata=%s\n",
       unsigned( index ),
       unsigned( m_score.points ),
       unsigned( m_score.penalty ),
       m_echelon,
-      m_priority,
+      m_selectCount,
       (char const *)m_userdata
       );
   }
@@ -253,8 +253,8 @@ public:
     {
       return lhs.m_echelon > rhs.m_echelon
         || ( lhs.m_echelon == rhs.m_echelon
-          && ( lhs.m_priority > rhs.m_priority
-            || ( lhs.m_priority == rhs.m_priority
+          && ( lhs.m_selectCount > rhs.m_selectCount
+            || ( lhs.m_selectCount == rhs.m_selectCount
               && lhs.m_score > rhs.m_score ) ) );
     }
   };
@@ -303,10 +303,10 @@ public:
     void const *userdata,
     Score score,
     unsigned echelon,
-    unsigned priority
+    unsigned selectCount
     )
   {
-    m_impl.push_back( Match( node, userdata, score, echelon, priority ) );
+    m_impl.push_back( Match( node, userdata, score, echelon, selectCount ) );
   }
 
   void sort() { std::sort( m_impl.begin(), m_impl.end(), Match::LessThan() ); }
@@ -359,7 +359,7 @@ class Node
   Dict *m_dict;
   void const *m_userdata;
   unsigned m_echelon;
-  unsigned m_priority;
+  unsigned m_selectCount;
   llvm::StringMap< FTL::OwnedPtr<Node> > m_children;
 
 protected:
@@ -387,7 +387,7 @@ protected:
             node->m_userdata,
             score,
             node->m_echelon,
-            node->m_priority
+            node->m_selectCount
             );
       } 
 
@@ -403,12 +403,12 @@ public:
     Dict *dict,
     void *userdata,
     unsigned echelon,
-    unsigned priority
+    unsigned selectCount
     )
     : m_dict( dict )
     , m_userdata( userdata )
     , m_echelon( echelon )
-    , m_priority( priority )
+    , m_selectCount( selectCount )
     {}
   Node( Node const & ) = delete;
   Node &operator=( Node const & ) = delete;
@@ -421,22 +421,22 @@ public:
     llvm::ArrayRef<llvm::StringRef> strs,
     void const *userdata,
     unsigned echelon,
-    unsigned priority
+    unsigned selectCount
     )
   {
     if ( !strs.empty() )
     {
       FTL::OwnedPtr<Node> &child = m_children[strs.front()];
       if ( !child )
-        child = new Node( m_dict, nullptr, echelon, priority );
-      return child->add( DropFront( strs ), userdata, echelon, priority );
+        child = new Node( m_dict, nullptr, echelon, selectCount );
+      return child->add( DropFront( strs ), userdata, echelon, selectCount );
     }
     else
     {
       if ( !m_userdata )
         m_userdata = userdata;
       m_echelon = std::max( m_echelon, echelon );
-      m_priority = std::max( m_priority, priority );
+      m_selectCount = std::max( m_selectCount, selectCount );
       return m_userdata == userdata;
     }
   }
@@ -461,8 +461,8 @@ public:
     }
   }
 
-  void setPriority( int priority )
-    { m_priority = priority; }
+  void incSelectCount()
+    { ++m_selectCount; }
 
   void clear()
   {
@@ -478,9 +478,9 @@ public:
     search( prefixes, needle, matches );
   }
 
-  int loadPrefsFromJSON( FTL::JSONObject const *jsonObject )
+  void loadPrefsFromJSON( FTL::JSONObject const *jsonObject )
   {
-    int highest = m_priority = jsonObject->getSInt32OrDefault( FTL_STR("priority"), 0 );
+    m_selectCount = jsonObject->getSInt32OrDefault( FTL_STR("selectCount"), 0 );
     if ( FTL::JSONObject const *childJSONObject = jsonObject->maybeGetObject( FTL_STR("children") ) )
     {
       for ( FTL::JSONObject::const_iterator it = childJSONObject->begin();
@@ -492,14 +492,10 @@ public:
           llvm::StringMap< FTL::OwnedPtr<Node> >::iterator jt =
             m_children.find( llvm::StringRef( childName.data(), childName.size() ) );
           if ( jt != m_children.end() )
-            highest = std::max(
-              highest,
-              jt->second->loadPrefsFromJSON( childJSONObject )
-              );
+            jt->second->loadPrefsFromJSON( childJSONObject );
         }
       }
     }
-    return highest;
   }
 
   FTL::JSONObject *savePrefsToJSON()
@@ -517,8 +513,8 @@ public:
     }
 
     FTL::JSONObject *resultJSONObject = new FTL::JSONObject;
-    if ( m_priority != 0 )
-      resultJSONObject->insert( FTL_STR("priority"), new FTL::JSONSInt32( m_priority ) );
+    if ( m_selectCount != 0 )
+      resultJSONObject->insert( FTL_STR("selectCount"), new FTL::JSONSInt32( m_selectCount ) );
     if ( !childrenJSONObject->empty() )
       resultJSONObject->insert( FTL_STR("children"), childrenJSONObject.take() );
     return resultJSONObject;
@@ -528,7 +524,6 @@ public:
 class Dict : public Shareable
 {
   Node m_root;
-  int m_nextPriority;
 
   Dict( Dict const & ) = delete;
   Dict &operator=( Dict const & ) = delete;
@@ -539,19 +534,16 @@ protected:
 
 public:
 
-  Dict() : m_root( this, nullptr, 0, 0 ), m_nextPriority( 1 ) {}
-
-  int getNextPriority()
-    { return m_nextPriority++; }
+  Dict() : m_root( this, nullptr, 0, 0 ) {}
 
   bool add(
     llvm::ArrayRef<llvm::StringRef> strs,
     void const *userdata,
     unsigned echelon,
-    unsigned priority
+    unsigned selectCount
     )
   {
-    return m_root.add( strs, userdata, echelon, priority );
+    return m_root.add( strs, userdata, echelon, selectCount );
   }
 
   bool remove(
@@ -606,8 +598,7 @@ public:
               jsonObject->maybeGet( FTL_STR("nodes") ) )
               if ( FTL::JSONObject const *nodesJSONObject =
                 nodesJSONValue->maybeCastOrNull<FTL::JSONObject>() )
-                m_nextPriority =
-                  m_root.loadPrefsFromJSON( nodesJSONObject ) + 1;
+                m_root.loadPrefsFromJSON( nodesJSONObject );
           }
           catch ( FTL::JSONException e )
           {
@@ -712,7 +703,7 @@ void FabricServices_SplitSearch_Matches_Select(
   {
     Match const *match = matches->getMatch( index );
     Node *node = match->getNode();
-    node->setPriority( node->getDict()->getNextPriority() );
+    node->incSelectCount();
   }
 }
 
@@ -740,14 +731,14 @@ bool FabricServices_SplitSearch_Dict_Add(
   char const * const *cStrs,
   void const *userdata,
   unsigned echelon,
-  unsigned priority
+  unsigned selectCount
   )
 {
   Dict *dict = static_cast<Dict *>( _dict );
   llvm::SmallVector<llvm::StringRef, 8> strs;
   while ( numCStrs-- > 0 )
     strs.push_back( *cStrs++ );
-  return dict->add( strs, userdata, echelon, priority );
+  return dict->add( strs, userdata, echelon, selectCount );
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL
@@ -757,13 +748,13 @@ bool FabricServices_SplitSearch_Dict_Add_Delimited(
   char delimiter,
   void const *userdata,
   unsigned echelon,
-  unsigned priority
+  unsigned selectCount
   )
 {
   Dict *dict = static_cast<Dict *>( _dict );
   llvm::SmallVector<llvm::StringRef, 8> strs;
   SplitDelimitedString( delimitedCStr, delimiter, strs );
-  return dict->add( strs, userdata, echelon, priority );
+  return dict->add( strs, userdata, echelon, selectCount );
 }
 
 FABRICSERVICES_SPLITSEARCH_DECL
