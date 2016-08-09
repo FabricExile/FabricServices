@@ -47,8 +47,8 @@ namespace FabricServices
           {
             FTL::StrRef jsonStr( jsonData, jsonSize );
             FTL::JSONStrWithLoc strWithLoc( jsonStr );
-            FTL::JSONDec jsonDec( strWithLoc );
-            FTL::JSONEnt jsonEnt;
+            FTL::JSONDec<FTL::JSONStrWithLoc> jsonDec( strWithLoc );
+            FTL::JSONEnt<FTL::JSONStrWithLoc> jsonEnt;
             if ( !jsonDec.getNext( jsonEnt )
               || jsonEnt.getType() != jsonEnt.Type_String )
               return FabricCore::RTValCodecResult_Accept_Pending;
