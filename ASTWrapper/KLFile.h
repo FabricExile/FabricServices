@@ -54,6 +54,7 @@ namespace FabricServices
     protected:
       
       KLFile(const KLExtension* extension, const char * filePath, const char * klCode);
+      void parseJSON( FabricCore::Variant const *astVariant );
       void parse();
       void clear();
 

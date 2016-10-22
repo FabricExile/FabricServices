@@ -46,165 +46,7 @@ void KLFile::parse()
     FabricCore::Variant variant = FabricCore::Variant::CreateFromJSON(jsonStr.c_str());
     const FabricCore::Variant * astVariant = variant.getDictValue("ast");
     if(astVariant)
-    {
-      for(uint32_t i=0;i<astVariant->getArraySize();i++)
-      {
-        const FabricCore::Variant * element = astVariant->getArrayElement(i);
-        if(!element->isDict())
-          continue;
-        const FabricCore::Variant * etVar = element->getDictValue("type");
-        if(!etVar)
-          continue;
-        if(!etVar->isString())
-          continue;
-
-        std::string et = etVar->getStringData();
-        if(et == "RequireGlobal")
-        {
-          KLRequire * e = new KLRequire(this, element);
-          m_requires.push_back(e);
-
-          // ensure to parse extensions in the right order,
-          // so that we can add methods to types for example.
-          KLExtension * extension = (KLExtension *)getExtension()->getASTManager()->getExtension(e);
-
-          if(extension == NULL && getExtension()->getASTManager()->getAutoLoadExtensions())
-          {
-            const char * extName = e->getRequiredExtension().c_str();
-            KLASTManager * manager = ((KLASTManager*)getExtension()->getASTManager());
-            extension = (KLExtension *)manager->loadExtensionFromExtsPath(extName);
-          }
-
-          if(extension)
-            extension->parse();
-        }
-        else if(et == "Alias")
-        {
-          KLAlias * e = new KLAlias(this, element);
-          m_aliases.push_back(e);
-        }
-        else if(et == "GlobalConstDecl")
-        {
-          KLConstant * e = new KLConstant(this, element);
-          m_constants.push_back(e);
-        }
-        else if(et == "Function")
-        {
-          KLFunction * e = new KLFunction(this, element);
-          const KLType * klType = m_extension->getASTManager()->getKLTypeByName(e->getName().c_str(), e);
-          if(klType)
-          {
-            KLMethod * m = new KLMethod(this, element, e->getName());
-            if(!klType->pushMethod(m))
-              m_functions.push_back(m);
-            else
-              m_methods.push_back(m);
-            delete(e);
-          }
-          else
-          {
-            m_functions.push_back(e);
-          }
-        }
-        else if(et == "Operator")
-        {
-          KLOperator * e = new KLOperator(this, element);
-          m_operators.push_back(e);
-        }
-        else if(et == "ASTStructDecl")
-        {
-          KLStruct * e = new KLStruct(this, element);
-          if(e->isForwardDecl())
-          {
-            m_extension->storeForwardDeclComments(e);
-            delete(e);
-          }
-          else
-          {
-            m_extension->consumeForwardDeclComments(e);
-            m_types.push_back(e);
-          }
-        }
-        else if(et == "MethodOpImpl")
-        {
-          KLMethod * e = new KLMethod(this, element);
-          std::string thisType = e->getThisType();
-          const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
-          if(klType)
-          {
-            if(!klType->pushMethod(e))
-              m_functions.push_back(e);
-            else
-              m_methods.push_back(e);
-          }
-          else
-            m_functions.push_back(e);
-        }
-        else if(et == "Destructor")
-        {
-          KLFunction function(this, element);
-          std::string thisType = function.getName();
-          FTL::StrTrimLeft<'~'>( thisType );
-          KLMethod * e = new KLMethod(this, element, thisType);
-          const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
-          if(klType)
-          {
-            if(!klType->pushMethod(e))
-              m_functions.push_back(e);
-          }
-          else
-            m_functions.push_back(e);
-        }
-        else if(et == "ASTInterfaceDecl")
-        {
-          KLInterface * e = new KLInterface(this, element);
-          if(e->isForwardDecl())
-          {
-            m_extension->storeForwardDeclComments(e);
-            delete(e);
-          }
-          else
-          {
-            m_extension->consumeForwardDeclComments(e);
-            m_types.push_back(e);
-          }
-        }
-        else if(et == "ASTObjectDecl")
-        {
-          KLObject * e = new KLObject(this, element);
-          if(e->isForwardDecl())
-          {
-            m_extension->storeForwardDeclComments(e);
-            delete(e);
-          }
-          else
-          {
-            m_extension->consumeForwardDeclComments(e);
-            m_types.push_back(e);
-          }
-        }
-        else if(et == "ComparisonOpImpl" ||
-          et == "AssignOpImpl" ||
-          et == "BinOpImpl" ||
-          et == "ASTUniOpDecl")
-        {
-          KLTypeOp * e = new KLTypeOp(this, element);
-
-          std::string thisType = e->getLhs();
-          const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
-          if(klType)
-            klType->pushTypeOp(e);
-          else
-            m_functions.push_back(e);
-        }
-        else
-        {
-          std::string message = "Unknown AST token '"+et+"'.";
-          throw(FabricCore::Exception(message.c_str(), message.length()));
-          return;
-        }
-      }
-    }
+      parseJSON( astVariant );
     const FabricCore::Variant * diagnosticsVariant = variant.getDictValue("diagnostics");
     if(diagnosticsVariant)
     {
@@ -212,6 +54,180 @@ void KLFile::parse()
       {
         const FabricCore::Variant * element = diagnosticsVariant->getArrayElement(i);
         m_errors.push_back(new KLError(element));
+      }
+    }
+  }
+  catch(FabricCore::Exception e)
+  {
+    throw(e);
+  }
+}
+
+void KLFile::parseJSON( FabricCore::Variant const *astVariant )
+{
+  try
+  {
+    for(uint32_t i=0;i<astVariant->getArraySize();i++)
+    {
+      const FabricCore::Variant * element = astVariant->getArrayElement(i);
+      if(!element->isDict())
+        continue;
+      const FabricCore::Variant * etVar = element->getDictValue("type");
+      if(!etVar)
+        continue;
+      if(!etVar->isString())
+        continue;
+
+      std::string et = etVar->getStringData();
+      if(et == "RequireGlobal")
+      {
+        KLRequire * e = new KLRequire(this, element);
+        m_requires.push_back(e);
+
+        // ensure to parse extensions in the right order,
+        // so that we can add methods to types for example.
+        KLExtension * extension = (KLExtension *)getExtension()->getASTManager()->getExtension(e);
+
+        if(extension == NULL && getExtension()->getASTManager()->getAutoLoadExtensions())
+        {
+          const char * extName = e->getRequiredExtension().c_str();
+          KLASTManager * manager = ((KLASTManager*)getExtension()->getASTManager());
+          extension = (KLExtension *)manager->loadExtensionFromExtsPath(extName);
+        }
+
+        if(extension)
+          extension->parse();
+      }
+      else if ( et == "ASTFileGlobal" )
+      {
+        const FabricCore::Variant * childAST =
+          element->getDictValue( "globalList" );
+        parseJSON( childAST );
+      }
+      else if(et == "Alias")
+      {
+        KLAlias * e = new KLAlias(this, element);
+        m_aliases.push_back(e);
+      }
+      else if(et == "GlobalConstDecl")
+      {
+        KLConstant * e = new KLConstant(this, element);
+        m_constants.push_back(e);
+      }
+      else if(et == "Function")
+      {
+        KLFunction * e = new KLFunction(this, element);
+        const KLType * klType = m_extension->getASTManager()->getKLTypeByName(e->getName().c_str(), e);
+        if(klType)
+        {
+          KLMethod * m = new KLMethod(this, element, e->getName());
+          if(!klType->pushMethod(m))
+            m_functions.push_back(m);
+          else
+            m_methods.push_back(m);
+          delete(e);
+        }
+        else
+        {
+          m_functions.push_back(e);
+        }
+      }
+      else if(et == "Operator")
+      {
+        KLOperator * e = new KLOperator(this, element);
+        m_operators.push_back(e);
+      }
+      else if(et == "ASTStructDecl")
+      {
+        KLStruct * e = new KLStruct(this, element);
+        if(e->isForwardDecl())
+        {
+          m_extension->storeForwardDeclComments(e);
+          delete(e);
+        }
+        else
+        {
+          m_extension->consumeForwardDeclComments(e);
+          m_types.push_back(e);
+        }
+      }
+      else if(et == "MethodOpImpl")
+      {
+        KLMethod * e = new KLMethod(this, element);
+        std::string thisType = e->getThisType();
+        const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
+        if(klType)
+        {
+          if(!klType->pushMethod(e))
+            m_functions.push_back(e);
+          else
+            m_methods.push_back(e);
+        }
+        else
+          m_functions.push_back(e);
+      }
+      else if(et == "Destructor")
+      {
+        KLFunction function(this, element);
+        std::string thisType = function.getName();
+        FTL::StrTrimLeft<'~'>( thisType );
+        KLMethod * e = new KLMethod(this, element, thisType);
+        const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
+        if(klType)
+        {
+          if(!klType->pushMethod(e))
+            m_functions.push_back(e);
+        }
+        else
+          m_functions.push_back(e);
+      }
+      else if(et == "ASTInterfaceDecl")
+      {
+        KLInterface * e = new KLInterface(this, element);
+        if(e->isForwardDecl())
+        {
+          m_extension->storeForwardDeclComments(e);
+          delete(e);
+        }
+        else
+        {
+          m_extension->consumeForwardDeclComments(e);
+          m_types.push_back(e);
+        }
+      }
+      else if(et == "ASTObjectDecl")
+      {
+        KLObject * e = new KLObject(this, element);
+        if(e->isForwardDecl())
+        {
+          m_extension->storeForwardDeclComments(e);
+          delete(e);
+        }
+        else
+        {
+          m_extension->consumeForwardDeclComments(e);
+          m_types.push_back(e);
+        }
+      }
+      else if(et == "ComparisonOpImpl" ||
+        et == "AssignOpImpl" ||
+        et == "BinOpImpl" ||
+        et == "ASTUniOpDecl")
+      {
+        KLTypeOp * e = new KLTypeOp(this, element);
+
+        std::string thisType = e->getLhs();
+        const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
+        if(klType)
+          klType->pushTypeOp(e);
+        else
+          m_functions.push_back(e);
+      }
+      else
+      {
+        std::string message = "Unknown AST token '"+et+"'.";
+        throw(FabricCore::Exception(message.c_str(), message.length()));
+        return;
       }
     }
   }
