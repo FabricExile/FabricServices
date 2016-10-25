@@ -273,6 +273,9 @@ std::string KLComment::getQualifierBracket(const char * qualifier, const char * 
 
   std::string q2 = "end" + q1;
 
+  std::string q1s = "\\" + q1;
+  std::string q2s = "\\" + q2;
+
   std::vector<std::string> content;
   bool inBlock = false;
   uint32_t blockIndentation = UINT_MAX;
@@ -287,9 +290,13 @@ std::string KLComment::getQualifierBracket(const char * qualifier, const char * 
         >
       >(l);
 
+    std::string lprefix = l;
+    FTL::StrToLower(lprefix);
+    FTL::StrTrimWhitespace(lprefix);
+
     if(inBlock)
     {
-      if(l.substr(0, q2.length() + 1) == "\\" + q2)
+      if(lprefix == q2s)
       {
         inBlock = false;
       }
@@ -309,7 +316,7 @@ std::string KLComment::getQualifierBracket(const char * qualifier, const char * 
     }
     else
     {
-      if(l.substr(0, q1.length() + 1) == "\\" + q1)
+      if(lprefix == q1s)
       {
         inBlock = true;
         blockIndentation = UINT_MAX;
