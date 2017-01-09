@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2016, Fabric Software Inc. All rights reserved.
+// Copyright (c) 2010-2017 Fabric Software Inc. All rights reserved.
 
 #ifndef __ASTWrapper_KLComment__
 #define __ASTWrapper_KLComment__
