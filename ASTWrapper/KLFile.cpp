@@ -104,6 +104,16 @@ void KLFile::parseJSON( FabricCore::Variant const *astVariant )
           element->getDictValue( "globalList" );
         parseJSON( childAST );
       }
+      else if ( et == "ASTNamespaceGlobal" )
+      {
+        const FabricCore::Variant * childAST =
+          element->getDictValue( "globalList" );
+        parseJSON( childAST );
+      }
+      else if ( et == "ASTUsingGlobal" )
+      {
+        // do nothing
+      }
       else if(et == "Alias")
       {
         KLAlias * e = new KLAlias(this, element);
