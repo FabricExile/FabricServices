@@ -118,12 +118,17 @@ bool KLCodeAssistant::updateCurrentCodeAndFile(const std::string & code, const s
 
   if(updateAST)
   {
-    if(m_file == NULL)
-      m_file = getASTManager()->loadSingleKLFile(m_fileName.c_str(), m_code.c_str(), dfgExec);
-    else if(m_file->getAbsoluteFilePath() != fileName)
-      m_file = getASTManager()->loadSingleKLFile(m_fileName.c_str(), m_code.c_str(), dfgExec);
-    else
-      ((KLFile*)m_file)->updateKLCode(m_code.c_str());
+    try {
+      if(m_file == NULL)
+        m_file = getASTManager()->loadSingleKLFile(m_fileName.c_str(), m_code.c_str(), dfgExec);
+      else if(m_file->getAbsoluteFilePath() != fileName)
+        m_file = getASTManager()->loadSingleKLFile(m_fileName.c_str(), m_code.c_str(), dfgExec);
+      else
+        ((KLFile*)m_file)->updateKLCode(m_code.c_str());
+    }
+    catch( FabricCore::Exception e ) {
+      printf( "Exception while parsing for KL syntax highlighting: %s\n", e.getDesc_cstr() );
+    }
 
     // update all error formats
     m_highlighter->clearErrors();
