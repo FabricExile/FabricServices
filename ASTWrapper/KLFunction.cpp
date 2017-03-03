@@ -85,7 +85,9 @@ std::string KLFunction::getReturnType(bool includeNameSpace) const
   {
     const KLType * klType = getASTManager()->getKLTypeByName(m_returnType.c_str(), this);
     if(klType)
+    {
       return klType->getNameSpacePrefix() + m_returnType;
+    }
   }
   return m_returnType;
 }
