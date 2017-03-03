@@ -28,6 +28,7 @@ namespace FabricServices
       virtual bool isOfDeclType(KLDeclType type) const;
 
       const std::string & getName() const;
+      std::string getNameWithNS() const;
       virtual const char * getKLType() const = 0;
       virtual std::vector<const KLType*> getParents() const = 0;
 

@@ -39,6 +39,11 @@ const std::string & KLType::getName() const
   return m_name;
 }
 
+std::string KLType::getNameWithNS() const
+{
+  return getNameSpacePrefix() + m_name;
+}
+
 uint32_t KLType::getMethodCount() const
 {
   return m_methods.size();

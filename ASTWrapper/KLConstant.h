@@ -27,7 +27,7 @@ namespace FabricServices
       virtual bool isOfDeclType(KLDeclType type) const;
 
       const std::string & getName() const;
-      const std::string & getType() const;
+      std::string getType(bool includeNameSpace = false) const;
 
     protected:
       

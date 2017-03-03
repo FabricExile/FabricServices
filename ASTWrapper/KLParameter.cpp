@@ -1,6 +1,8 @@
 // Copyright (c) 2010-2017 Fabric Software Inc. All rights reserved.
 
 #include "KLParameter.h"
+#include "KLType.h"
+#include "KLASTManager.h"
 
 #include <FTL/StrSplit.h>
 
@@ -38,15 +40,21 @@ const std::string & KLParameter::getName() const
   return m_name;
 }
 
-const std::string & KLParameter::getType() const
+std::string KLParameter::getType(bool includeNameSpace) const
 {
+  if(includeNameSpace)
+  {
+    const KLType * klType = getASTManager()->getKLTypeByName(getTypeNoArray(false).c_str(), this);
+    if(klType)
+      return klType->getNameSpacePrefix() + m_type;
+  }
   return m_type;
 }
 
-std::string KLParameter::getTypeNoArray() const
+std::string KLParameter::getTypeNoArray(bool includeNameSpace) const
 {
   std::vector<std::string> parts;
-  FTL::StrSplit<'['>( m_type, parts );
+  FTL::StrSplit<'['>( getType(includeNameSpace), parts );
   std::string type = parts[0];
   if(type.substr(type.length()-2, 2) == "<>")
     type = type.substr(0, type.length()-2);

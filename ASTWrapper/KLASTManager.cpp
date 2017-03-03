@@ -488,6 +488,11 @@ const KLType* KLASTManager::getKLTypeByName(const char * name, const KLDecl* dec
   std::vector<const KLType*> types = getTypes();
   for(long int i=types.size()-1;i>=0;i--)
   {
+    if(types[i]->getNameWithNS() == name)
+      return types[i];
+  }
+  for(long int i=types.size()-1;i>=0;i--)
+  {
     if(types[i]->getName() == name)
       return types[i];
   }
@@ -501,7 +506,11 @@ const KLType* KLASTManager::getKLTypeByName(const char * name, const KLFile* fil
   if(file)
   {
     std::vector<const KLType*> types = file->getExtension()->getTypes();
-    printf("extension types: %d\n", (int)types.size());
+    for(uint32_t i=0;i<types.size();i++)
+    {
+      if(types[i]->getNameWithNS() == name)
+        return types[i];
+    }
     for(uint32_t i=0;i<types.size();i++)
     {
       if(types[i]->getName() == name)
@@ -519,6 +528,11 @@ const KLType* KLASTManager::getKLTypeByName(const char * name, const KLFile* fil
         std::vector<const KLType*> types = extension->getTypes();
         for(uint32_t j=0;j<types.size();j++)
         {
+          if(types[j]->getNameWithNS() == name)
+            return types[j];
+        }
+        for(uint32_t j=0;j<types.size();j++)
+        {
           if(types[j]->getName() == name)
             return types[j];
         }
@@ -534,6 +548,11 @@ const KLType* KLASTManager::getKLTypeByName(const char * name, const KLFile* fil
     if(types[i]->getName() == name)
       return types[i];
   }
+  for(long int i=types.size()-1;i>=0;i--)
+  {
+    if(types[i]->getNameWithNS() == name)
+      return types[i];
+  }
 
   return NULL;
 }
@@ -544,6 +563,11 @@ const KLType* KLASTManager::getKLTypeByName(const char * name, const char * exte
   if(ext)
   {
     std::vector<const KLType*> types = ext->getTypes();
+    for(uint32_t j=0;j<types.size();j++)
+    {
+      if(types[j]->getNameWithNS() == name)
+        return types[j];
+    }
     for(uint32_t j=0;j<types.size();j++)
     {
       if(types[j]->getName() == name)

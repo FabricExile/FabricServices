@@ -3,6 +3,7 @@
 #include "KLFunction.h"
 #include "KLMethod.h"
 #include "KLExtension.h"
+#include "KLASTManager.h"
 
 #include <vector>
 #include <string>
@@ -78,8 +79,14 @@ const std::string & KLFunction::getName() const
   return m_name;
 }
 
-const std::string & KLFunction::getReturnType() const
+std::string KLFunction::getReturnType(bool includeNameSpace) const
 {
+  if(includeNameSpace)
+  {
+    const KLType * klType = getASTManager()->getKLTypeByName(m_returnType.c_str(), this);
+    if(klType)
+      return klType->getNameSpacePrefix() + m_returnType;
+  }
   return m_returnType;
 }
 

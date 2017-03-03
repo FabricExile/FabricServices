@@ -1,6 +1,8 @@
 // Copyright (c) 2010-2017 Fabric Software Inc. All rights reserved.
 
 #include "KLConstant.h"
+#include "KLType.h"
+#include "KLASTManager.h"
 
 using namespace FabricServices::ASTWrapper;
 
@@ -32,7 +34,13 @@ const std::string & KLConstant::getName() const
   return m_name;
 }
 
-const std::string & KLConstant::getType() const
+std::string KLConstant::getType(bool includeNameSpace) const
 {
+  if(includeNameSpace)
+  {
+    const KLType * klType = getASTManager()->getKLTypeByName(m_type.c_str(), this);
+    if(klType)
+      return klType->getNameSpacePrefix() + m_type;
+  }
   return m_type;
 }

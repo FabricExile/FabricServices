@@ -28,8 +28,8 @@ namespace FabricServices
 
       const std::string & getUsage() const;
       const std::string & getName() const;
-      const std::string & getType() const;
-      std::string getTypeNoArray() const;
+      std::string getType(bool includeNameSpace = false) const;
+      std::string getTypeNoArray(bool includeNameSpace = false) const;
       std::string getTypeArraySuffix() const;
 
     protected:
