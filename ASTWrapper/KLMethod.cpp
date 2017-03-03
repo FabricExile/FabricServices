@@ -40,8 +40,14 @@ bool KLMethod::isOfDeclType(KLDeclType type) const
   return KLFunction::isOfDeclType(type);
 }
 
-const std::string & KLMethod::getThisType() const
+std::string KLMethod::getThisType(bool includeNameSpace) const
 {
+  if(includeNameSpace)
+  {
+    const KLType * klType = getASTManager()->getKLTypeByName(m_thisType.c_str(), this);
+    if(klType)
+      return klType->getNameSpacePrefix() + m_thisType;
+  }
   return m_thisType;
 }
 
