@@ -1,12 +1,12 @@
 // Copyright (c) 2010-2017 Fabric Software Inc. All rights reserved.
 
-#ifndef __ASTWrapper_KLFile__
-#define __ASTWrapper_KLFile__
+#ifndef __ASTWrapper_KLNameSpace__
+#define __ASTWrapper_KLNameSpace__
 
 #include "KLDeclContainer.h"
+#include "KLCommented.h"
 #include "KLStmtSearch.h"
 #include "KLError.h"
-#include "KLNameSpace.h"
 #include <vector>
 
 namespace FabricServices
@@ -17,23 +17,18 @@ namespace FabricServices
     // forward decl
     class KLExtension;
 
-    class KLFile : public KLDeclContainer, public KLStmtSearch
+    class KLNameSpace : public KLDeclContainer, public KLStmtSearch, public KLCommented
     {
-      friend class KLExtension;
-      friend class KLASTManager;
-      friend class KLNameSpace;
+      friend class KLFile;
       
     public:
 
-      virtual ~KLFile();
+      virtual ~KLNameSpace();
 
-      const KLExtension* getExtension() const;
-      const char * getFilePath() const;
-      const char * getFileName() const;
-      const char * getAbsoluteFilePath() const;
-      const char * getKLCode() const;
+      virtual KLDeclType getDeclType() const;
+      virtual bool isOfDeclType(KLDeclType type) const;
 
-      bool hasErrors() const;
+      const char * getName() const;
 
       // decl vector getters
       virtual std::vector<const KLRequire*> getRequires() const;
@@ -44,7 +39,6 @@ namespace FabricServices
       virtual std::vector<const KLFunction*> getFunctions() const;
       virtual std::vector<const KLMethod*> getMethods() const;
       virtual std::vector<const KLOperator*> getOperators() const;
-      virtual std::vector<const KLError*> getErrors() const;
 
       // decl vector getter overloads
       virtual std::vector<const KLInterface*> getInterfaces() const;
@@ -52,27 +46,26 @@ namespace FabricServices
       virtual std::vector<const KLObject*> getObjects() const;
 
       virtual const KLStmt * getStatementAtCursor(uint32_t line, uint32_t column) const;
-      virtual bool updateKLCode(const char * code);
 
     protected:
       
-      KLFile(const KLExtension* extension, const char * filePath, const char * klCode);
-      void parseJSON( FabricCore::Variant const *astVariant );
-      void parse();
+      KLNameSpace(const KLFile * klFile, const KLNameSpace * nameSpace, JSONData data);
       void clear();
 
-      KLExtension* getExtensionMutable() const;
+      void parseJSON( FabricCore::Variant const *astVariant );
+
+      std::vector<const KLRequire*> m_requires;
+      std::vector<const KLNameSpace*> m_nameSpaces;
+      std::vector<const KLAlias*> m_aliases;
+      std::vector<const KLConstant*> m_constants;
+      std::vector<const KLType*> m_types;
+      std::vector<const KLFunction*> m_functions;
+      std::vector<const KLMethod*> m_methods;
+      std::vector<const KLOperator*> m_operators;
 
     private:
-      bool m_parsed;
-      KLExtension* m_extension;
-      std::string m_filePath;
-      std::string m_fileName;
-      std::string m_absFilePath;
-      std::string m_klCode;
-      
-      std::vector<const KLNameSpace*> m_nameSpaces;
-      std::vector<const KLError*> m_errors;
+
+      std::string m_name;
     };
 
   };
@@ -81,4 +74,4 @@ namespace FabricServices
 
 #include "KLExtension.h"
 
-#endif // __ASTWrapper_KLFile__
+#endif // __ASTWrapper_KLNameSpace__

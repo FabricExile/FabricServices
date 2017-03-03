@@ -501,6 +501,7 @@ const KLType* KLASTManager::getKLTypeByName(const char * name, const KLFile* fil
   if(file)
   {
     std::vector<const KLType*> types = file->getExtension()->getTypes();
+    printf("extension types: %d\n", (int)types.size());
     for(uint32_t i=0;i<types.size();i++)
     {
       if(types[i]->getName() == name)

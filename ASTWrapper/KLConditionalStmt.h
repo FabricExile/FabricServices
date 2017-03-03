@@ -29,7 +29,7 @@ namespace FabricServices
 
     protected:
 
-      KLConditionalStmt(const KLFile* klFile, JSONData data, KLStmt * parent = NULL);
+      KLConditionalStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent = NULL);
     };
 
   };

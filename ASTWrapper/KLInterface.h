@@ -15,7 +15,7 @@ namespace FabricServices
 
     class KLInterface : public KLType
     {
-      friend class KLFile;
+      friend class KLNameSpace;
 
     public:
 
@@ -31,7 +31,7 @@ namespace FabricServices
 
     protected:
 
-      KLInterface(const KLFile* klFile, JSONData data);
+      KLInterface(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
 
     private:
       bool m_isForwardDecl;

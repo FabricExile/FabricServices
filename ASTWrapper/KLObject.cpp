@@ -5,8 +5,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLObject::KLObject(const KLFile* klFile, JSONData data)
-: KLStruct(klFile, data)
+KLObject::KLObject(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLStruct(klFile, nameSpace, data)
 {
   JSONData parentsAndInterfaces = getArrayDictValue("parentsAndInterfaces");
   if(parentsAndInterfaces)

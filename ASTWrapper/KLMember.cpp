@@ -4,8 +4,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLMember::KLMember(const KLFile* klFile, JSONData data)
-: KLCommented(klFile, data)
+KLMember::KLMember(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLCommented(klFile, nameSpace, data)
 {
   m_name = getDictValue("memberDecls")->getArrayElement(0)->getDictValue("name")->getStringData();
   m_type = getStringDictValue("baseType");

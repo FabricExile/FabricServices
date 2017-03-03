@@ -7,8 +7,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLVarDeclStmt::KLVarDeclStmt(const KLFile* klFile, JSONData data, KLStmt * parent)
-: KLStmt(klFile, data, parent)
+KLVarDeclStmt::KLVarDeclStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent)
+: KLStmt(klFile, nameSpace, data, parent)
 {
   m_baseType = getStringDictValue("baseType");
 

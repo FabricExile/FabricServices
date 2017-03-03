@@ -17,7 +17,7 @@ namespace FabricServices
 
     class KLAlias : public KLCommented
     {
-      friend class KLFile;
+      friend class KLNameSpace;
 
     public:
 
@@ -31,7 +31,7 @@ namespace FabricServices
 
     protected:
       
-      KLAlias(const KLFile* klFile, JSONData data);
+      KLAlias(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
 
     private:
       

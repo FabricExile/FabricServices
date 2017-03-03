@@ -16,8 +16,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLStmt::KLStmt(const KLFile* klFile, JSONData data, KLStmt * parent)
-: KLCommented(klFile, data)
+KLStmt::KLStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent)
+: KLCommented(klFile, nameSpace, data)
 {
   m_type = getDictValue("type")->getStringData();
   m_parent = parent;
@@ -143,37 +143,37 @@ const KLStmt * KLStmt::constructChild(JSONData data)
 
   if(type == "CompoundStatement")
   {
-    result = new KLCompoundStmt(getKLFile(), data, this);
+    result = new KLCompoundStmt(getKLFile(), getNameSpace(), data, this);
   }
   else if(type == "ASTCondStmt")
   {
-    result = new KLConditionalStmt(getKLFile(), data, this);
+    result = new KLConditionalStmt(getKLFile(), getNameSpace(), data, this);
   }
   else if(type == "CStyleLoop")
   {
-    result = new KLCStyleLoopStmt(getKLFile(), data, this);
+    result = new KLCStyleLoopStmt(getKLFile(), getNameSpace(), data, this);
   }
   else if(type == "SwitchStatement")
   {
-    result = new KLSwitchStmt(getKLFile(), data, this);
+    result = new KLSwitchStmt(getKLFile(), getNameSpace(), data, this);
   }
   else if(type == "Case")
   {
-    result = new KLCaseStmt(getKLFile(), data, this);
+    result = new KLCaseStmt(getKLFile(), getNameSpace(), data, this);
   }
   else if(type == "VarDeclStatement")
   {
-    result = new KLVarDeclStmt(getKLFile(), data, this);
+    result = new KLVarDeclStmt(getKLFile(), getNameSpace(), data, this);
   }
   else if(type == "ExprStatement")
   {
-    result = new KLExprStmt(getKLFile(), data, this);
+    result = new KLExprStmt(getKLFile(), getNameSpace(), data, this);
   }
   else
   {
     // printf("unresolved type '%s'\n", type.c_str());
     // printf("json '%s'\n", data->getJSONEncoding().getStringData());
-    result = new KLStmt(getKLFile(), data, this);
+    result = new KLStmt(getKLFile(), getNameSpace(), data, this);
   }
 
   m_statements.push_back(result);

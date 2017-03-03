@@ -4,18 +4,18 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLCommented::KLCommented(const KLFile* klFile, JSONData data)
-: KLDecl(klFile, data)
+KLCommented::KLCommented(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLDecl(klFile, nameSpace, data)
 {
   JSONData preComments = getDictValue("preComments");
   if(preComments)
   {
-    m_comments = new KLComment(klFile, this, preComments);
+    m_comments = new KLComment(klFile, nameSpace, this, preComments);
   }
   else
   {
     FabricCore::Variant variant = FabricCore::Variant::CreateArray();
-    m_comments = new KLComment(klFile, this, &variant);
+    m_comments = new KLComment(klFile, nameSpace, this, &variant);
   }
 }
 

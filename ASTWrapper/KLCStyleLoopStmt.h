@@ -26,7 +26,7 @@ namespace FabricServices
 
     protected:
 
-      KLCStyleLoopStmt(const KLFile* klFile, JSONData data, KLStmt * parent = NULL);
+      KLCStyleLoopStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent = NULL);
     };
 
   };

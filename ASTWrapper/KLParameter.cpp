@@ -6,8 +6,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLParameter::KLParameter(const KLFile* klFile, JSONData data)
-: KLDecl(klFile, data)
+KLParameter::KLParameter(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLDecl(klFile, nameSpace, data)
 {
   m_usage = getStringDictValue("usage");
   m_name = getStringDictValue("name");

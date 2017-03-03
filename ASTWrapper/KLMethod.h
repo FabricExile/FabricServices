@@ -15,7 +15,7 @@ namespace FabricServices
 
     class KLMethod : public KLFunction
     {
-      friend class KLFile;
+      friend class KLNameSpace;
       friend class KLInterface;
       
     public:
@@ -38,7 +38,7 @@ namespace FabricServices
 
     protected:
 
-      KLMethod(const KLFile* klFile, JSONData data, const std::string & thisType = "");
+      KLMethod(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, const std::string & thisType = "");
 
     private:
       

@@ -18,6 +18,7 @@ namespace FabricServices
     {
       friend class KLASTManager;
       friend class KLFile;
+      friend class KLNameSpace;
 
     public:
 
@@ -50,6 +51,7 @@ namespace FabricServices
 
       // decl vector getters
       virtual std::vector<const KLRequire*> getRequires() const;
+      virtual std::vector<const KLNameSpace*> getNameSpaces() const;
       virtual std::vector<const KLAlias*> getAliases() const;
       virtual std::vector<const KLConstant*> getConstants() const;
       virtual std::vector<const KLType*> getTypes() const;

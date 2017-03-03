@@ -15,7 +15,7 @@ namespace FabricServices
 
     class KLTypeOp : public KLFunction
     {
-      friend class KLFile;
+      friend class KLNameSpace;
 
     public:
 
@@ -63,7 +63,7 @@ namespace FabricServices
 
     protected:
 
-      KLTypeOp(const KLFile* klFile, JSONData data);
+      KLTypeOp(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
 
     private:
 

@@ -314,6 +314,17 @@ std::vector<const KLRequire*> KLExtension::getRequires() const
   return result;
 }
 
+std::vector<const KLNameSpace*> KLExtension::getNameSpaces() const
+{
+  std::vector<const KLNameSpace*> result;
+  for(uint32_t i=0;i<m_files.size();i++)
+  {
+    std::vector<const KLNameSpace*> singleResult = m_files[i]->getNameSpaces();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
+}
+
 std::vector<const KLAlias*> KLExtension::getAliases() const
 {
   std::vector<const KLAlias*> result;

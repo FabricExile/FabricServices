@@ -18,7 +18,7 @@ namespace FabricServices
 
     class KLType : public KLCommented
     {
-      friend class KLFile;
+      friend class KLNameSpace;
 
     public:
 
@@ -45,7 +45,7 @@ namespace FabricServices
 
     protected:
 
-      KLType(const KLFile* klFile, JSONData data);
+      KLType(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
       bool pushMethod(KLMethod * method) const;
       bool pushTypeOp(KLTypeOp * typeOp) const;
       mutable std::vector<KLMethod*> m_methods;

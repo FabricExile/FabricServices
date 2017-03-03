@@ -17,7 +17,7 @@ namespace FabricServices
 
     class KLRequire : public KLCommented
     {
-      friend class KLFile;
+      friend class KLNameSpace;
 
     public:
 
@@ -31,7 +31,7 @@ namespace FabricServices
 
     protected:
       
-      KLRequire(const KLFile* klFile, JSONData data);
+      KLRequire(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
 
     private:
       

@@ -31,7 +31,7 @@ namespace FabricServices
 
     protected:
 
-      KLVarDeclStmt(const KLFile* klFile, JSONData data, KLStmt * parent = NULL);
+      KLVarDeclStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent = NULL);
 
       std::string m_baseType;
       std::vector<std::string> m_names;

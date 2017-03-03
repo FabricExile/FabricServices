@@ -52,7 +52,7 @@ namespace FabricServices
 
     protected:
 
-      KLComment(const KLFile* klFile, const KLCommented * owner, JSONData data);
+      KLComment(const KLFile* klFile, const KLNameSpace * nameSpace, const KLCommented * owner, JSONData data);
       void appendToContent(std::vector<std::string> content) const;
 
     private:

@@ -7,8 +7,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLCompoundStmt::KLCompoundStmt(const KLFile* klFile, JSONData data, KLStmt * parent)
-: KLStmt(klFile, data, parent)
+KLCompoundStmt::KLCompoundStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent)
+: KLStmt(klFile, nameSpace, data, parent)
 {
   JSONData statements = getArrayDictValue("statements");
   if(statements)

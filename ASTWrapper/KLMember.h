@@ -29,7 +29,7 @@ namespace FabricServices
 
     protected:
 
-      KLMember(const KLFile* klFile, JSONData data);
+      KLMember(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
 
     private:
       

@@ -7,8 +7,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLSwitchStmt::KLSwitchStmt(const KLFile* klFile, JSONData data, KLStmt * parent)
-: KLStmt(klFile, data, parent)
+KLSwitchStmt::KLSwitchStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent)
+: KLStmt(klFile, nameSpace, data, parent)
 {
   JSONData cases = getArrayDictValue("cases");
   if(cases)

@@ -4,8 +4,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLConstant::KLConstant(const KLFile* klFile, JSONData data)
-: KLCommented(klFile, data)
+KLConstant::KLConstant(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLCommented(klFile, nameSpace, data)
 {
   m_name = getDictValue("constDecl")->getDictValue("name")->getStringData();
   m_type = getDictValue("constDecl")->getDictValue("scalarType")->getStringData();

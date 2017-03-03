@@ -26,7 +26,7 @@ namespace FabricServices
 
     protected:
 
-      KLExprStmt(const KLFile* klFile, JSONData data, KLStmt * parent = NULL);
+      KLExprStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent = NULL);
     };
 
   };

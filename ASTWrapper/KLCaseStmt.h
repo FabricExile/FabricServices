@@ -26,7 +26,7 @@ namespace FabricServices
 
     protected:
 
-      KLCaseStmt(const KLFile* klFile, JSONData data, KLStmt * parent = NULL);
+      KLCaseStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent = NULL);
     };
 
   };

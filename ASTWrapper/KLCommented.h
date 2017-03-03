@@ -28,7 +28,7 @@ namespace FabricServices
 
     protected:
 
-      KLCommented(const KLFile* klFile, JSONData data);
+      KLCommented(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
 
     private:
       

@@ -15,7 +15,7 @@ namespace FabricServices
 
     class KLObject : public KLStruct
     {
-      friend class KLFile;
+      friend class KLNameSpace;
 
     public:
 
@@ -29,7 +29,7 @@ namespace FabricServices
 
     protected:
 
-      KLObject(const KLFile* klFile, JSONData data);
+      KLObject(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
 
     private:
       std::vector<std::string> m_parentsAndInterfaces;

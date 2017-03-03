@@ -4,8 +4,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLRequire::KLRequire(const KLFile* klFile, JSONData data)
-: KLCommented(klFile, data)
+KLRequire::KLRequire(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLCommented(klFile, nameSpace, data)
 {
   JSONData require = getArrayDictValue("requires")->getArrayElement(0);
   m_requiredExtension = require->getDictValue("name")->getStringData();

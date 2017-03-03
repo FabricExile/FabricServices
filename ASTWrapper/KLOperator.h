@@ -15,7 +15,7 @@ namespace FabricServices
 
     class KLOperator : public KLFunction
     {
-      friend class KLFile;
+      friend class KLNameSpace;
 
     public:
 
@@ -28,7 +28,7 @@ namespace FabricServices
 
     protected:
 
-      KLOperator(const KLFile* klFile, JSONData data);
+      KLOperator(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
     };
 
   };

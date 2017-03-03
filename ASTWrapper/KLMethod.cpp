@@ -6,8 +6,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLMethod::KLMethod(const KLFile* klFile, JSONData data, const std::string & thisType)
-: KLFunction(klFile, data)
+KLMethod::KLMethod(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, const std::string & thisType)
+: KLFunction(klFile, nameSpace, data)
 {
   const char * dictThisType = getStringDictValue("thisType");
   if(dictThisType)

@@ -1,6 +1,7 @@
 // Copyright (c) 2010-2017 Fabric Software Inc. All rights reserved.
 
 #include "KLFile.h"
+#include "KLNameSpace.h"
 #include "KLLocation.h"
 
 #include <FTL/Path.h>
@@ -43,6 +44,8 @@ void KLFile::parse()
       jsonVal = GetKLJSONAST(*client, m_fileName.c_str(), m_klCode.c_str(), false);
     std::string jsonStr = jsonVal.getStringCString();
 
+    // printf("%s\n", jsonStr.c_str());
+
     FabricCore::Variant variant = FabricCore::Variant::CreateFromJSON(jsonStr.c_str());
     const FabricCore::Variant * astVariant = variant.getDictValue("ast");
     if(astVariant)
@@ -79,163 +82,166 @@ void KLFile::parseJSON( FabricCore::Variant const *astVariant )
         continue;
 
       std::string et = etVar->getStringData();
-      if(et == "RequireGlobal")
-      {
-        KLRequire * e = new KLRequire(this, element);
-        m_requires.push_back(e);
 
-        // ensure to parse extensions in the right order,
-        // so that we can add methods to types for example.
-        KLExtension * extension = (KLExtension *)getExtension()->getASTManager()->getExtension(e);
+      // printf("KLFile: %s\n", et.c_str());
+      // if(et == "RequireGlobal")
+      // {
+      //   KLRequire * e = new KLRequire(this, element);
+      //   m_requires.push_back(e);
 
-        if(extension == NULL && getExtension()->getASTManager()->getAutoLoadExtensions())
-        {
-          const char * extName = e->getRequiredExtension().c_str();
-          KLASTManager * manager = ((KLASTManager*)getExtension()->getASTManager());
-          extension = (KLExtension *)manager->loadExtensionFromExtsPath(extName);
-        }
+      //   // ensure to parse extensions in the right order,
+      //   // so that we can add methods to types for example.
+      //   KLExtension * extension = (KLExtension *)getExtension()->getASTManager()->getExtension(e);
 
-        if(extension)
-          extension->parse();
-      }
-      else if ( et == "ASTFileGlobal" )
-      {
-        const FabricCore::Variant * childAST =
-          element->getDictValue( "globalList" );
-        parseJSON( childAST );
-      }
-      else if ( et == "ASTNamespaceGlobal" )
-      {
-        const FabricCore::Variant * childAST =
-          element->getDictValue( "globalList" );
-        parseJSON( childAST );
-      }
-      else if ( et == "ASTUsingGlobal" )
-      {
-        // do nothing
-      }
-      else if(et == "Alias")
-      {
-        KLAlias * e = new KLAlias(this, element);
-        m_aliases.push_back(e);
-      }
-      else if(et == "GlobalConstDecl")
-      {
-        KLConstant * e = new KLConstant(this, element);
-        m_constants.push_back(e);
-      }
-      else if(et == "Function")
-      {
-        KLFunction * e = new KLFunction(this, element);
-        const KLType * klType = m_extension->getASTManager()->getKLTypeByName(e->getName().c_str(), e);
-        if(klType)
-        {
-          KLMethod * m = new KLMethod(this, element, e->getName());
-          if(!klType->pushMethod(m))
-            m_functions.push_back(m);
-          else
-            m_methods.push_back(m);
-          delete(e);
-        }
-        else
-        {
-          m_functions.push_back(e);
-        }
-      }
-      else if(et == "Operator")
-      {
-        KLOperator * e = new KLOperator(this, element);
-        m_operators.push_back(e);
-      }
-      else if(et == "ASTStructDecl")
-      {
-        KLStruct * e = new KLStruct(this, element);
-        if(e->isForwardDecl())
-        {
-          m_extension->storeForwardDeclComments(e);
-          delete(e);
-        }
-        else
-        {
-          m_extension->consumeForwardDeclComments(e);
-          m_types.push_back(e);
-        }
-      }
-      else if(et == "MethodOpImpl")
-      {
-        KLMethod * e = new KLMethod(this, element);
-        std::string thisType = e->getThisType();
-        const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
-        if(klType)
-        {
-          if(!klType->pushMethod(e))
-            m_functions.push_back(e);
-          else
-            m_methods.push_back(e);
-        }
-        else
-          m_functions.push_back(e);
-      }
-      else if(et == "Destructor")
-      {
-        KLFunction function(this, element);
-        std::string thisType = function.getName();
-        FTL::StrTrimLeft<'~'>( thisType );
-        KLMethod * e = new KLMethod(this, element, thisType);
-        const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
-        if(klType)
-        {
-          if(!klType->pushMethod(e))
-            m_functions.push_back(e);
-        }
-        else
-          m_functions.push_back(e);
-      }
-      else if(et == "ASTInterfaceDecl")
-      {
-        KLInterface * e = new KLInterface(this, element);
-        if(e->isForwardDecl())
-        {
-          m_extension->storeForwardDeclComments(e);
-          delete(e);
-        }
-        else
-        {
-          m_extension->consumeForwardDeclComments(e);
-          m_types.push_back(e);
-        }
-      }
-      else if(et == "ASTObjectDecl")
-      {
-        KLObject * e = new KLObject(this, element);
-        if(e->isForwardDecl())
-        {
-          m_extension->storeForwardDeclComments(e);
-          delete(e);
-        }
-        else
-        {
-          m_extension->consumeForwardDeclComments(e);
-          m_types.push_back(e);
-        }
-      }
-      else if(et == "ComparisonOpImpl" ||
-        et == "AssignOpImpl" ||
-        et == "BinOpImpl" ||
-        et == "ASTUniOpDecl")
-      {
-        KLTypeOp * e = new KLTypeOp(this, element);
+      //   if(extension == NULL && getExtension()->getASTManager()->getAutoLoadExtensions())
+      //   {
+      //     const char * extName = e->getRequiredExtension().c_str();
+      //     KLASTManager * manager = ((KLASTManager*)getExtension()->getASTManager());
+      //     extension = (KLExtension *)manager->loadExtensionFromExtsPath(extName);
+      //   }
 
-        std::string thisType = e->getLhs();
-        const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
-        if(klType)
-          klType->pushTypeOp(e);
-        else
-          m_functions.push_back(e);
+      //   if(extension)
+      //     extension->parse();
+      // }
+      // else if ( et == "ASTFileGlobal" )
+      if ( et == "ASTFileGlobal" )
+      {
+        // setup the global namespace
+        KLNameSpace * e = new KLNameSpace(this, NULL, element);
+        m_nameSpaces.push_back(e);
+        e->parseJSON( element->getDictValue( "globalList" ) );
       }
+      // else if ( et == "ASTNamespaceGlobal" )
+      // {
+      //   KLNameSpace * e = new KLNameSpace(this, NULL, element);
+      //   m_nameSpaces.push_back(e);
+      // }
+      // else if ( et == "ASTUsingGlobal" )
+      // {
+      //   // do nothing
+      // }
+      // else if(et == "Alias")
+      // {
+      //   KLAlias * e = new KLAlias(this, element);
+      //   m_aliases.push_back(e);
+      // }
+      // else if(et == "GlobalConstDecl")
+      // {
+      //   KLConstant * e = new KLConstant(this, element);
+      //   m_constants.push_back(e);
+      // }
+      // else if(et == "Function")
+      // {
+      //   KLFunction * e = new KLFunction(this, element);
+      //   const KLType * klType = m_extension->getASTManager()->getKLTypeByName(e->getName().c_str(), e);
+      //   if(klType)
+      //   {
+      //     KLMethod * m = new KLMethod(this, element, e->getName());
+      //     if(!klType->pushMethod(m))
+      //       m_functions.push_back(m);
+      //     else
+      //       m_methods.push_back(m);
+      //     delete(e);
+      //   }
+      //   else
+      //   {
+      //     m_functions.push_back(e);
+      //   }
+      // }
+      // else if(et == "Operator")
+      // {
+      //   KLOperator * e = new KLOperator(this, element);
+      //   m_operators.push_back(e);
+      // }
+      // else if(et == "ASTStructDecl")
+      // {
+      //   KLStruct * e = new KLStruct(this, element);
+      //   if(e->isForwardDecl())
+      //   {
+      //     m_extension->storeForwardDeclComments(e);
+      //     delete(e);
+      //   }
+      //   else
+      //   {
+      //     m_extension->consumeForwardDeclComments(e);
+      //     m_types.push_back(e);
+      //   }
+      // }
+      // else if(et == "MethodOpImpl")
+      // {
+      //   KLMethod * e = new KLMethod(this, element);
+      //   std::string thisType = e->getThisType();
+      //   const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
+      //   if(klType)
+      //   {
+      //     if(!klType->pushMethod(e))
+      //       m_functions.push_back(e);
+      //     else
+      //       m_methods.push_back(e);
+      //   }
+      //   else
+      //     m_functions.push_back(e);
+      // }
+      // else if(et == "Destructor")
+      // {
+      //   KLFunction function(this, element);
+      //   std::string thisType = function.getName();
+      //   FTL::StrTrimLeft<'~'>( thisType );
+      //   KLMethod * e = new KLMethod(this, element, thisType);
+      //   const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
+      //   if(klType)
+      //   {
+      //     if(!klType->pushMethod(e))
+      //       m_functions.push_back(e);
+      //   }
+      //   else
+      //     m_functions.push_back(e);
+      // }
+      // else if(et == "ASTInterfaceDecl")
+      // {
+      //   KLInterface * e = new KLInterface(this, element);
+      //   if(e->isForwardDecl())
+      //   {
+      //     m_extension->storeForwardDeclComments(e);
+      //     delete(e);
+      //   }
+      //   else
+      //   {
+      //     m_extension->consumeForwardDeclComments(e);
+      //     m_types.push_back(e);
+      //   }
+      // }
+      // else if(et == "ASTObjectDecl")
+      // {
+      //   KLObject * e = new KLObject(this, element);
+      //   if(e->isForwardDecl())
+      //   {
+      //     m_extension->storeForwardDeclComments(e);
+      //     delete(e);
+      //   }
+      //   else
+      //   {
+      //     m_extension->consumeForwardDeclComments(e);
+      //     m_types.push_back(e);
+      //   }
+      // }
+      // else if(et == "ComparisonOpImpl" ||
+      //   et == "AssignOpImpl" ||
+      //   et == "BinOpImpl" ||
+      //   et == "ASTUniOpDecl")
+      // {
+      //   KLTypeOp * e = new KLTypeOp(this, element);
+
+      //   std::string thisType = e->getLhs();
+      //   const KLType * klType = m_extension->getASTManager()->getKLTypeByName(thisType.c_str(), e);
+      //   if(klType)
+      //     klType->pushTypeOp(e);
+      //   else
+      //     m_functions.push_back(e);
+      // }
       else
       {
-        std::string message = "Unknown AST token '"+et+"'.";
+        std::string message = "KLFile: Unknown AST token '"+et+"'.";
         throw(FabricCore::Exception(message.c_str(), message.length()));
         return;
       }
@@ -256,27 +262,17 @@ KLFile::~KLFile()
 
 void KLFile::clear()
 {
-  for(uint32_t i=0;i<m_requires.size();i++)
-    delete(m_requires[i]);
-  for(uint32_t i=0;i<m_aliases.size();i++)
-    delete(m_aliases[i]);
-  for(uint32_t i=0;i<m_constants.size();i++)
-    delete(m_constants[i]);
-  for(uint32_t i=0;i<m_types.size();i++)
-    delete(m_types[i]);
-  for(uint32_t i=0;i<m_functions.size();i++)
-    delete(m_functions[i]);
-  for(uint32_t i=0;i<m_operators.size();i++)
-    delete(m_operators[i]);
-  m_requires.clear();
-  m_aliases.clear();
-  m_constants.clear();
-  m_types.clear();
-  m_functions.clear();
-  m_operators.clear();
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+    delete(m_nameSpaces[i]);
+  m_nameSpaces.clear();
 }
 
 const KLExtension* KLFile::getExtension() const
+{
+  return m_extension;
+}
+
+KLExtension* KLFile::getExtensionMutable() const
 {
   return m_extension;
 }
@@ -308,41 +304,89 @@ bool KLFile::hasErrors() const
 
 std::vector<const KLRequire*> KLFile::getRequires() const
 {
-  return m_requires;
+  std::vector<const KLRequire*> result;
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+  {
+    std::vector<const KLRequire*> singleResult = m_nameSpaces[i]->getRequires();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
+}
+
+std::vector<const KLNameSpace*> KLFile::getNameSpaces() const
+{
+  std::vector<const KLNameSpace*> result;
+  result.insert(result.end(), m_nameSpaces.begin(), m_nameSpaces.end());
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+  {
+    std::vector<const KLNameSpace*> singleResult = m_nameSpaces[i]->getNameSpaces();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
 }
 
 std::vector<const KLAlias*> KLFile::getAliases() const
 {
-  return m_aliases;
+  std::vector<const KLAlias*> result;
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+  {
+    std::vector<const KLAlias*> singleResult = m_nameSpaces[i]->getAliases();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
 }
 
 std::vector<const KLConstant*> KLFile::getConstants() const
 {
-  return m_constants;
+  std::vector<const KLConstant*> result;
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+  {
+    std::vector<const KLConstant*> singleResult = m_nameSpaces[i]->getConstants();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
 }
 
 std::vector<const KLType*> KLFile::getTypes() const
 {
-  return m_types;
+  std::vector<const KLType*> result;
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+  {
+    std::vector<const KLType*> singleResult = m_nameSpaces[i]->getTypes();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
 }
 
 std::vector<const KLFunction*> KLFile::getFunctions() const
 {
-  return m_functions;
+  std::vector<const KLFunction*> result;
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+  {
+    std::vector<const KLFunction*> singleResult = m_nameSpaces[i]->getFunctions();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
 }
 
 std::vector<const KLMethod*> KLFile::getMethods() const
 {
-  return m_methods;
+  std::vector<const KLMethod*> result;
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+  {
+    std::vector<const KLMethod*> singleResult = m_nameSpaces[i]->getMethods();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
 }
 
 std::vector<const KLInterface*> KLFile::getInterfaces() const
 {
   std::vector<const KLInterface*> result;
-  for(uint32_t i=0;i<m_types.size();i++)
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
   {
-    if(m_types[i]->getKLType() == std::string("interface"))
-      result.push_back((const KLInterface*)m_types[i]);
+    std::vector<const KLInterface*> singleResult = m_nameSpaces[i]->getInterfaces();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
   }
   return result;
 }
@@ -350,10 +394,10 @@ std::vector<const KLInterface*> KLFile::getInterfaces() const
 std::vector<const KLStruct*> KLFile::getStructs() const
 {
   std::vector<const KLStruct*> result;
-  for(uint32_t i=0;i<m_types.size();i++)
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
   {
-    if(m_types[i]->getKLType() == std::string("struct"))
-      result.push_back((const KLStruct*)m_types[i]);
+    std::vector<const KLStruct*> singleResult = m_nameSpaces[i]->getStructs();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
   }
   return result;
 }
@@ -361,17 +405,23 @@ std::vector<const KLStruct*> KLFile::getStructs() const
 std::vector<const KLObject*> KLFile::getObjects() const
 {
   std::vector<const KLObject*> result;
-  for(uint32_t i=0;i<m_types.size();i++)
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
   {
-    if(m_types[i]->getKLType() == std::string("object"))
-      result.push_back((const KLObject*)m_types[i]);
+    std::vector<const KLObject*> singleResult = m_nameSpaces[i]->getObjects();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
   }
   return result;
 }
 
 std::vector<const KLOperator*> KLFile::getOperators() const
 {
-  return m_operators;
+  std::vector<const KLOperator*> result;
+  for(uint32_t i=0;i<m_nameSpaces.size();i++)
+  {
+    std::vector<const KLOperator*> singleResult = m_nameSpaces[i]->getOperators();
+    result.insert(result.end(), singleResult.begin(), singleResult.end());
+  }
+  return result;
 }
 
 std::vector<const KLError*> KLFile::getErrors() const
@@ -384,9 +434,9 @@ const KLStmt * KLFile::getStatementAtCursor(uint32_t line, uint32_t column) cons
   uint32_t minDistance = UINT_MAX;
   const KLStmt * result = NULL;
 
-  for(size_t i=0;i<m_functions.size();i++)
+  for(size_t i=0;i<m_nameSpaces.size();i++)
   {
-    const KLStmt * statement = m_functions[i]->getStatementAtCursor(line, column);
+    const KLStmt * statement = m_nameSpaces[i]->getStatementAtCursor(line, column);
     if(statement)
     {
       uint32_t distance = statement->getCursorDistance(line, column);
@@ -396,52 +446,6 @@ const KLStmt * KLFile::getStatementAtCursor(uint32_t line, uint32_t column) cons
         minDistance = distance;
       }
       
-    }
-  }
-
-  for(size_t i=0;i<m_operators.size();i++)
-  {
-    const KLStmt * statement = m_operators[i]->getStatementAtCursor(line, column);
-    if(statement)
-    {
-      uint32_t distance = statement->getCursorDistance(line, column);
-      if(distance < minDistance)
-      {
-        result = statement;
-        minDistance = distance;
-      }
-      
-    }
-  }
-
-  for(size_t i=0;i<m_types.size();i++)
-  {
-    for(uint32_t j=0;j<m_types[i]->getMethodCount();j++)
-    {
-      const KLStmt * statement = m_types[i]->getMethod(j)->getStatementAtCursor(line, column);
-      if(statement)
-      {
-        uint32_t distance = statement->getCursorDistance(line, column);
-        if(distance < minDistance)
-        {
-          result = statement;
-          minDistance = distance;
-        }
-      }
-    }
-
-    for(uint32_t j=0;j<m_types[i]->getTypeOpCount();j++)
-    {
-      const KLStmt * statement = m_types[i]->getTypeOp(j)->getStatementAtCursor(line, column);
-      if(statement)
-      {
-        uint32_t distance = statement->getCursorDistance(line, column);
-        if(distance < minDistance)
-        {
-          result = statement;
-          minDistance = distance;
-        }
-      }
     }
   }
 
@@ -450,55 +454,15 @@ const KLStmt * KLFile::getStatementAtCursor(uint32_t line, uint32_t column) cons
 
 bool KLFile::updateKLCode(const char * code)
 {
-
-  std::vector<const KLRequire*> tempRequires = m_requires;
-  std::vector<const KLAlias*> tempAliases = m_aliases;
-  std::vector<const KLConstant*> tempConstants = m_constants;
-  std::vector<const KLType*> tempTypes = m_types;
-  std::vector<const KLFunction*> tempFunctions = m_functions;
-  std::vector<const KLOperator*> tempOperators = m_operators;
-
-  for(uint32_t i=0;i<m_errors.size();i++)
-    delete(m_errors[i]);
-  m_requires.clear();
-  m_aliases.clear();
-  m_constants.clear();
-  m_types.clear();
-  m_functions.clear();
-  m_operators.clear();
+  clear();
   m_errors.clear();
 
   m_klCode = code;
   m_parsed = false;
   parse();
 
-  if(hasErrors())
-  {
-    clear();
-    m_requires = tempRequires;
-    m_aliases = tempAliases;
-    m_constants = tempConstants;
-    m_types = tempTypes;
-    m_functions = tempFunctions;
-    m_operators = tempOperators;
-  }
-  else
-  {
-    for(uint32_t i=0;i<tempRequires.size();i++)
-      delete(tempRequires[i]);
-    for(uint32_t i=0;i<tempAliases.size();i++)
-      delete(tempAliases[i]);
-    for(uint32_t i=0;i<tempConstants.size();i++)
-      delete(tempConstants[i]);
-    for(uint32_t i=0;i<tempTypes.size();i++)
-      delete(tempTypes[i]);
-    for(uint32_t i=0;i<tempFunctions.size();i++)
-      delete(tempFunctions[i]);
-    for(uint32_t i=0;i<tempOperators.size();i++)
-      delete(tempOperators[i]);
-
+  if(!hasErrors())
     m_extension->getASTManager()->onFileParsed(this);
-  }
 
   return hasErrors();
 }

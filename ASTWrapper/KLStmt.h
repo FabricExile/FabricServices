@@ -38,7 +38,7 @@ namespace FabricServices
 
     protected:
 
-      KLStmt(const KLFile* klFile, JSONData data, KLStmt * parent = NULL);
+      KLStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent = NULL);
       const KLStmt * constructChild(JSONData data);
 
       std::string m_type;

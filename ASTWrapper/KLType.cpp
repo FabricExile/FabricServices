@@ -6,8 +6,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLType::KLType(const KLFile* klFile, JSONData data)
-: KLCommented(klFile, data)
+KLType::KLType(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLCommented(klFile, nameSpace, data)
 {
   const char * name = getStringDictValue("name");
   if(name)

@@ -17,6 +17,7 @@ namespace FabricServices
     class KLExtension;
     class KLFile;
     class KLLocation;
+    class KLNameSpace;
 
     typedef const FabricCore::Variant * JSONData;
 
@@ -46,6 +47,7 @@ namespace FabricServices
       KLDeclType_Type,
       KLDeclType_TypeOp,
       KLDeclType_VarDeclStmt,
+      KLDeclType_NameSpace,
       KLDeclType_NumItems
     };
 
@@ -57,6 +59,8 @@ namespace FabricServices
       virtual bool isInternal() const = 0;
       virtual uint32_t getID() const;
       virtual const KLASTManager* getASTManager() const;
+      virtual const KLNameSpace * getNameSpace() const;
+      virtual std::string getNameSpacePrefix() const;
       virtual const KLExtension* getExtension() const;
       virtual const KLFile* getKLFile() const;
       virtual const KLLocation * getLocation() const;
@@ -66,7 +70,7 @@ namespace FabricServices
 
     protected:
 
-      KLDecl(const KLFile* klFile, JSONData data);
+      KLDecl(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data);
 
       uint32_t getArraySize() const;
       const char * getStringArrayElement(uint32_t index) const;
@@ -81,6 +85,7 @@ namespace FabricServices
       uint32_t m_id;
       JSONData m_data;
       const KLFile* m_klFile;
+      const KLNameSpace * m_nameSpace;
       KLLocation * m_location;
     };
 

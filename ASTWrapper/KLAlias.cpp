@@ -4,8 +4,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLAlias::KLAlias(const KLFile* klFile, JSONData data)
-: KLCommented(klFile, data)
+KLAlias::KLAlias(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLCommented(klFile, nameSpace, data)
 {
   m_newUserName = getStringDictValue("newUserName");
   m_oldUserName = getStringDictValue("oldUserName");

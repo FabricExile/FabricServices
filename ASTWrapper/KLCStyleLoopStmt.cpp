@@ -7,8 +7,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLCStyleLoopStmt::KLCStyleLoopStmt(const KLFile* klFile, JSONData data, KLStmt * parent)
-: KLStmt(klFile, data, parent)
+KLCStyleLoopStmt::KLCStyleLoopStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent)
+: KLStmt(klFile, nameSpace, data, parent)
 {
   JSONData body = getDictValue("body");
   if(body)

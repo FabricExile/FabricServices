@@ -7,8 +7,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLExprStmt::KLExprStmt(const KLFile* klFile, JSONData data, KLStmt * parent)
-: KLStmt(klFile, data, parent)
+KLExprStmt::KLExprStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent)
+: KLStmt(klFile, nameSpace, data, parent)
 {
 }
 

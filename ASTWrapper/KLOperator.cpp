@@ -4,8 +4,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLOperator::KLOperator(const KLFile* klFile, JSONData data)
-: KLFunction(klFile, data)
+KLOperator::KLOperator(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
+: KLFunction(klFile, nameSpace, data)
 {
 }
 

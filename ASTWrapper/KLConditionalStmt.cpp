@@ -7,8 +7,8 @@
 
 using namespace FabricServices::ASTWrapper;
 
-KLConditionalStmt::KLConditionalStmt(const KLFile* klFile, JSONData data, KLStmt * parent)
-: KLStmt(klFile, data, parent)
+KLConditionalStmt::KLConditionalStmt(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data, KLStmt * parent)
+: KLStmt(klFile, nameSpace, data, parent)
 {
   JSONData trueStatement = getDictValue("trueStatement");
   if(trueStatement)

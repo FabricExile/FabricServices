@@ -5,15 +5,17 @@
 #include "KLExtension.h"
 #include "KLFile.h"
 #include "KLLocation.h"
+#include "KLNameSpace.h"
 
 #include <map>
 
 using namespace FabricServices::ASTWrapper;
 
-KLDecl::KLDecl(const KLFile* klFile, JSONData data)
+KLDecl::KLDecl(const KLFile* klFile, const KLNameSpace * nameSpace, JSONData data)
 {
   m_data = data;
   m_klFile = klFile;
+  m_nameSpace = nameSpace;
   KLASTManager * manager = (KLASTManager *)getASTManager();
   m_id = manager->generateDeclId();
 
@@ -40,6 +42,24 @@ uint32_t KLDecl::getID() const
 const KLASTManager* KLDecl::getASTManager() const
 {
   return getExtension()->getASTManager();
+}
+
+const KLNameSpace * KLDecl::getNameSpace() const
+{
+  return m_nameSpace;
+}
+
+std::string KLDecl::getNameSpacePrefix() const
+{
+  if(m_nameSpace == NULL)
+    return "";
+
+  std::string result = 
+    m_nameSpace->getNameSpacePrefix() + 
+    m_nameSpace->getName();
+  if(result.length() > 0)
+    result += "::";
+  return result;
 }
 
 const KLExtension* KLDecl::getExtension() const
