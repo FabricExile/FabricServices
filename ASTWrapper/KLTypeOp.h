@@ -45,7 +45,7 @@ namespace FabricServices
 
 
       const std::string & getName() const;
-      const std::string & getReturnType() const;
+      std::string getReturnType(bool includeNameSpace = false) const;
       uint32_t getParameterCount() const;
       const KLParameter * getParameter(uint32_t index) const;
 
