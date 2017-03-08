@@ -200,7 +200,7 @@ const std::string & KLTypeOp::getName() const
   return m_name;
 }
 
-const std::string & KLTypeOp::getReturnType() const
+std::string KLTypeOp::getReturnType(bool includeNameSpace) const
 {
   if(m_returnType.length() == 0)
   {
@@ -351,4 +351,3 @@ std::string KLTypeOp::getRhs() const
 {
   return m_rhs;
 }
-
