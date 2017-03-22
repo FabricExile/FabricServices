@@ -486,8 +486,8 @@ public:
       for ( FTL::JSONObject::const_iterator it = childJSONObject->begin();
         it != childJSONObject->end(); ++it )
       {
-        FTL::StrRef childName = it->first;
-        if ( FTL::JSONObject const *childJSONObject = it->second->maybeCastOrNull<FTL::JSONObject>() )
+        FTL::StrRef childName = it->key();
+        if ( FTL::JSONObject const *childJSONObject = it->value()->maybeCastOrNull<FTL::JSONObject>() )
         {
           llvm::StringMap< FTL::OwnedPtr<Node> >::iterator jt =
             m_children.find( llvm::StringRef( childName.data(), childName.size() ) );
