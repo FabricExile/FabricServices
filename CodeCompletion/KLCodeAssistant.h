@@ -25,6 +25,9 @@ namespace FabricServices
 
       virtual bool setASTManager(ASTWrapper::KLASTManager * manager);
 
+      void setEnabled(bool enabled) { m_enabled = enabled; }
+      bool isEnabled() const { return m_enabled; }
+
       KLSyntaxHighlighter * getHighlighter();
       const ASTWrapper::KLFile * getKLFile();
       std::vector<const ASTWrapper::KLError*> getKLErrors();
@@ -62,6 +65,7 @@ namespace FabricServices
 
       KLSyntaxHighlighter * m_highlighter;
       bool m_owningHighlighter;
+      bool m_enabled;
 
       std::string m_code;
       std::vector<std::string> m_lines;

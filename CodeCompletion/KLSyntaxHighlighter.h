@@ -69,6 +69,8 @@ namespace FabricServices
 
       virtual void onFileParsed(const ASTWrapper::KLFile * file);
 
+      void initializeBasicTypes(bool force=false);
+
     private:
 
       bool m_basicTypesInitialized;
