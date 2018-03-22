@@ -30,7 +30,7 @@ if str(GetOption('buildType')).lower() == 'debug':
 msvc_version = None
 opt_version = None
 if buildOS == 'Windows':
-    msvc_version = '12.0'
+    msvc_version = '14.0'
     opt_version = 'mt'
 install_headers = True
 
@@ -41,8 +41,8 @@ env['FABRIC_BUILD_OS'] = buildOS
 env['FABRIC_BUILD_ARCH'] = buildArch
 env['FABRIC_BUILD_TYPE'] = buildType
 env['FABRIC_VERSION_MAJ'] = '2'
-env['FABRIC_VERSION_MIN'] = '0'
-env['FABRIC_VERSION_REV'] = '1'
+env['FABRIC_VERSION_MIN'] = '7'
+env['FABRIC_VERSION_REV'] = '0'
 
 if buildOS == 'Linux':
     env.Append(CXXFLAGS = ['-fPIC'])
@@ -58,7 +58,7 @@ capiSharedLibFlags = {
         os.path.join(fabricDir, 'include'),
     ],
     'LIBPATH': [os.path.join(fabricDir, 'lib')],
-    'LIBS': ['FabricCore-2.0']
+    'LIBS': ['FabricCore-2.7']
 }
 
 variant_dir = 'FabricServices'
