@@ -196,7 +196,7 @@ void KLSyntaxHighlighter::clearHighlighting()
   m_lastText = "";
 }
 
-void KLSyntaxHighlighter::onFileParsed(const ASTWrapper::KLFile * file)
+void KLSyntaxHighlighter::initializeBasicTypes(bool force)
 {
   if(!m_basicTypesInitialized)
   {
@@ -221,6 +221,11 @@ void KLSyntaxHighlighter::onFileParsed(const ASTWrapper::KLFile * file)
 
     m_basicTypesInitialized = true;
   }
+}
+
+void KLSyntaxHighlighter::onFileParsed(const ASTWrapper::KLFile * file)
+{
+  initializeBasicTypes();
 
   std::vector<const ASTWrapper::KLConstant*> constants = file->getConstants();
   std::vector<const ASTWrapper::KLType*> types = file->getTypes();
