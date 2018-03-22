@@ -27,6 +27,7 @@ struct MatchCharBraces
 
 KLCodeAssistant::KLCodeAssistant(KLASTManager * manager)
 : ASTWrapper::KLASTClient(manager)
+, m_enabled(true)
 {
   m_highlighter = new KLSyntaxHighlighter(manager);
   m_owningHighlighter = true;
@@ -35,6 +36,7 @@ KLCodeAssistant::KLCodeAssistant(KLASTManager * manager)
 
 KLCodeAssistant::KLCodeAssistant(KLSyntaxHighlighter * highlighter)
 : ASTWrapper::KLASTClient(highlighter->getASTManager())
+, m_enabled(true)
 {
   m_highlighter = highlighter;
   m_owningHighlighter = false;
@@ -80,6 +82,8 @@ std::vector<const KLError*> KLCodeAssistant::getKLErrors()
 
 bool KLCodeAssistant::updateCurrentKLFile(const KLFile * file)
 {
+  if(!isEnabled())
+    return false;
   if(!hasASTManager())
     return false;
   if(m_file == file)
@@ -99,6 +103,8 @@ bool KLCodeAssistant::updateCurrentKLFile(const KLFile * file)
 
 bool KLCodeAssistant::updateCurrentCodeAndFile(const std::string & code, const std::string & fileName, bool updateAST, FabricCore::DFGExec *dfgExec )
 {
+  if(!isEnabled())
+    return false;
   if(!hasASTManager())
     return false;
 
